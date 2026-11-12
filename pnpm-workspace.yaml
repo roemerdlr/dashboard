@@ -1,6 +1,10 @@
 packages:
   - .
+# pnpm 11+ (local)
 allowBuilds:
-  bcrypt: false
+  bcrypt: true
   sharp: false
+# pnpm 10 (used by Vercel builds)
+onlyBuiltDependencies:
+  - bcrypt
 minimumReleaseAge: 2880

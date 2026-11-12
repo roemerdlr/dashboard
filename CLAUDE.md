@@ -16,7 +16,7 @@ The package manager is **pnpm** (`pnpm-lock.yaml`, `pnpm-workspace.yaml`).
 
 There is no lint script and no test framework.
 
-`pnpm-workspace.yaml` sets `minimumReleaseAge: 2880`, so pnpm won't install package versions published less than 2 days ago. It also disables build scripts for `bcrypt` and `sharp` (`allowBuilds: false`). If `bcrypt`'s native binding fails at runtime, this setting is the likely cause.
+`pnpm-workspace.yaml` sets `minimumReleaseAge: 2880`, so pnpm won't install package versions published less than 2 days ago. `bcrypt` must be allowed to run its install script, because that script downloads the native binding `bcrypt_lib.node`; without it, `/seed` (and the Vercel build) fails with "Cannot find module ... bcrypt_lib.node". It is allowed in two places: `allowBuilds` is read by the local pnpm (11+), and `onlyBuiltDependencies` is read by pnpm 10, which Vercel uses. Keep both in sync. After changing them locally, run `pnpm rebuild bcrypt`.
 
 ## Environment / database
 
