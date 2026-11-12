@@ -1,4 +1,8 @@
 import SideNav from '@/app/ui/dashboard/sidenav';
+
+// Dashboard pages read live data from Postgres, so render them per request
+// instead of prerendering at build time (which would query the DB during `next build`).
+export const dynamic = 'force-dynamic';
  
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
