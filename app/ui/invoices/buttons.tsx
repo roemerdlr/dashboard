@@ -1,6 +1,7 @@
-import { PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, PlusIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { deleteInvoice } from '@/app/lib/actions';
+import { ConfirmDeleteButton } from '@/app/ui/confirm-delete';
 
 export function CreateInvoice() {
   return (
@@ -25,14 +26,21 @@ export function UpdateInvoice({ id }: { id: string }) {
   );
 }
 
-export function DeleteInvoice({ id }: { id: string }) {
+export function DeleteInvoice({
+  id,
+  customerName,
+  amount,
+}: {
+  id: string;
+  customerName: string;
+  amount: string;
+}) {
   const deleteInvoiceWithId = deleteInvoice.bind(null, id);
   return (
-    <form action={deleteInvoiceWithId}>
-      <button type="submit" className="rounded-md border p-2 hover:bg-gray-100">
-        <span className="sr-only">Delete</span>
-        <TrashIcon className="w-5" />
-      </button>
-    </form>
+    <ConfirmDeleteButton
+      action={deleteInvoiceWithId}
+      title="Delete invoice?"
+      description={`The ${amount} invoice for ${customerName} will be permanently deleted. This can't be undone.`}
+    />
   );
 }
