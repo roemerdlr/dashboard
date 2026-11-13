@@ -7,9 +7,9 @@ import postgres from 'postgres';
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
 import { put, del } from '@vercel/blob';
+import sharp from 'sharp';
 import {
   CUSTOMER_IMAGE_BLOB_FOLDER,
-  CUSTOMER_IMAGE_EXTENSIONS,
   CUSTOMER_IMAGE_ROUTE,
   DEFAULT_CUSTOMER_IMAGE,
   blobPathnameFromImageUrl,
@@ -174,19 +174,26 @@ function getImageFile(formData: FormData) {
   return image instanceof File && image.size > 0 ? image : null;
 }
 
-// Uploads to the private Blob store and returns the app URL that serves it.
+// Avatars are shown at most 64px wide; 256px keeps them sharp on high-DPI screens.
+const CUSTOMER_AVATAR_SIZE = 256;
+
+// Resizes the image to a square WebP avatar, uploads it to the private Blob
+// store and returns the app URL that serves it. Uploaded images skip the
+// Next.js image optimizer (see app/lib/customer-image.ts), so they must be
+// stored small.
 async function uploadCustomerImage(file: File) {
-  // Use a fixed, URL-safe name; the random suffix makes it unique.
-  const extension = CUSTOMER_IMAGE_EXTENSIONS[file.type];
-  const blob = await put(
-    `${CUSTOMER_IMAGE_BLOB_FOLDER}avatar.${extension}`,
-    file,
-    {
-      access: 'private',
-      addRandomSuffix: true,
-      contentType: file.type,
-    },
-  );
+  const avatar = await sharp(Buffer.from(await file.arrayBuffer()))
+    .rotate() // apply the EXIF orientation from phone photos
+    .resize(CUSTOMER_AVATAR_SIZE, CUSTOMER_AVATAR_SIZE, { fit: 'cover' })
+    .webp({ quality: 80 })
+    .toBuffer();
+
+  // Fixed, URL-safe name; the random suffix makes it unique.
+  const blob = await put(`${CUSTOMER_IMAGE_BLOB_FOLDER}avatar.webp`, avatar, {
+    access: 'private',
+    addRandomSuffix: true,
+    contentType: 'image/webp',
+  });
   return `${CUSTOMER_IMAGE_ROUTE}${blob.pathname}`;
 }
 
@@ -243,7 +250,7 @@ export async function createCustomer(
       imageUrl = await uploadCustomerImage(validated.image);
     } catch (error) {
       console.error('Image upload failed:', error);
-      return { message: 'Upload Error: Failed to upload the image.' };
+      return { message: 'Upload Error: Failed to process or upload the image.' };
     }
   }
 
@@ -292,7 +299,7 @@ export async function updateCustomer(
       newImageUrl = await uploadCustomerImage(validated.image);
     } catch (error) {
       console.error('Image upload failed:', error);
-      return { message: 'Upload Error: Failed to upload the image.' };
+      return { message: 'Upload Error: Failed to process or upload the image.' };
     }
 
     let oldImageUrl: string | undefined;

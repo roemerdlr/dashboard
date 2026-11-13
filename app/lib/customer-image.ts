@@ -33,10 +33,3 @@ export function isUploadedCustomerImage(imageUrl: string) {
 export function blobPathnameFromImageUrl(imageUrl: string) {
   return imageUrl.slice(CUSTOMER_IMAGE_ROUTE.length);
 }
-
-export const CUSTOMER_IMAGE_EXTENSIONS: Record<string, string> = {
-  'image/png': 'png',
-  'image/jpeg': 'jpg',
-  'image/webp': 'webp',
-  'image/gif': 'gif',
-};
