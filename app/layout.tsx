@@ -7,6 +7,7 @@ import {
   getLocale,
   getTranslations,
 } from '@/app/lib/i18n/server';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();
@@ -33,6 +34,7 @@ export default async function RootLayout({
         <I18nProvider locale={locale} dictionary={getDictionary(locale)}>
           {children}
         </I18nProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
