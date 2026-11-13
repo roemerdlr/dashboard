@@ -132,3 +132,106 @@ export async function authenticate(
     throw error;
   }
 }
+
+const CustomerFormSchema = z.object({
+  name: z.string().trim().min(1, { message: 'Please enter a name.' }),
+  email: z
+    .string()
+    .trim()
+    .email({ message: 'Please enter a valid email address.' }),
+});
+
+export type CustomerState = {
+  errors?: {
+    name?: string[];
+    email?: string[];
+  };
+  message?: string | null;
+};
+
+const DEFAULT_CUSTOMER_IMAGE = '/customers/default.png';
+
+function revalidateCustomerPages() {
+  // Customer names, emails and images also appear on the invoices and overview pages.
+  revalidatePath('/dashboard/customers');
+  revalidatePath('/dashboard/invoices');
+  revalidatePath('/dashboard');
+}
+
+export async function createCustomer(
+  prevState: CustomerState,
+  formData: FormData,
+) {
+  const validatedFields = CustomerFormSchema.safeParse({
+    name: formData.get('name'),
+    email: formData.get('email'),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Create Customer.',
+    };
+  }
+
+  const { name, email } = validatedFields.data;
+
+  try {
+    await sql`
+      INSERT INTO customers (name, email, image_url)
+      VALUES (${name}, ${email}, ${DEFAULT_CUSTOMER_IMAGE})
+    `;
+  } catch (error) {
+    return { message: 'Database Error: Failed to Create Customer.' };
+  }
+
+  revalidateCustomerPages();
+  redirect('/dashboard/customers');
+}
+
+export async function updateCustomer(
+  id: string,
+  prevState: CustomerState,
+  formData: FormData,
+) {
+  const validatedFields = CustomerFormSchema.safeParse({
+    name: formData.get('name'),
+    email: formData.get('email'),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Update Customer.',
+    };
+  }
+
+  const { name, email } = validatedFields.data;
+
+  try {
+    await sql`
+      UPDATE customers
+      SET name = ${name}, email = ${email}
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    return { message: 'Database Error: Failed to Update Customer.' };
+  }
+
+  revalidateCustomerPages();
+  redirect('/dashboard/customers');
+}
+
+export async function deleteCustomer(id: string) {
+  // invoices.customer_id has no foreign key, so guard here to avoid orphaned invoices.
+  // The UI disables the button for these customers; this covers stale pages.
+  const [{ count }] = await sql`
+    SELECT COUNT(*) FROM invoices WHERE customer_id = ${id}
+  `;
+  if (Number(count) > 0) {
+    throw new Error('Cannot delete a customer who still has invoices.');
+  }
+
+  await sql`DELETE FROM customers WHERE id = ${id}`;
+  revalidateCustomerPages();
+}
