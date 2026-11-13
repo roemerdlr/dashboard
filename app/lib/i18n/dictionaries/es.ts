@@ -18,6 +18,14 @@ const es: Dictionary = {
     search: 'Buscar',
     breadcrumb: 'Ruta de navegación',
   },
+  pagination: {
+    label: 'Paginación',
+    showing: 'Mostrando {from}–{to} de {total}',
+    rowsPerPage: 'Filas por página',
+    previous: 'Página anterior',
+    next: 'Página siguiente',
+    page: 'Página {page}',
+  },
   metadata: {
     description:
       'El dashboard oficial del curso Next.js Learn, construido con App Router.',
@@ -43,6 +51,7 @@ const es: Dictionary = {
     users: 'Usuarios',
     roles: 'Roles',
     signOut: 'Cerrar sesión',
+    logo: 'Página de inicio de Acme',
   },
   home: {
     welcome: 'Bienvenido a Acme.',
@@ -97,6 +106,8 @@ const es: Dictionary = {
     amountPlaceholder: 'Ingresa el monto en USD',
     setStatus: 'Establece el estado de la factura',
     notFound: 'No se encontró la factura solicitada.',
+    editLabel: 'Editar la factura de {amount} de {customer}',
+    deleteLabel: 'Eliminar la factura de {amount} de {customer}',
     deleteTitle: '¿Eliminar factura?',
     deleteDescription:
       'La factura de {amount} de {customer} se eliminará permanentemente. Esta acción no se puede deshacer.',
@@ -124,6 +135,8 @@ const es: Dictionary = {
     paid: 'Pagado',
     invoiceCount: { one: '{count} factura', other: '{count} facturas' },
     notFound: 'No se encontró el cliente solicitado.',
+    editLabel: 'Editar el cliente {name}',
+    deleteLabel: 'Eliminar el cliente {name}',
     deleteTitle: '¿Eliminar cliente?',
     deleteDescription:
       '{name} se eliminará permanentemente. Esta acción no se puede deshacer.',
@@ -164,6 +177,8 @@ const es: Dictionary = {
     passwordPlaceholder: 'Al menos 6 caracteres',
     passwordKeepPlaceholder: 'Déjalo vacío para mantener la contraseña actual',
     notFound: 'No se encontró el usuario solicitado.',
+    editLabel: 'Editar el usuario {name}',
+    deleteLabel: 'Eliminar el usuario {name}',
     deleteTitle: '¿Eliminar usuario?',
     deleteDescription:
       '{name} perderá el acceso al panel. Esta acción no se puede deshacer.',
@@ -205,6 +220,8 @@ const es: Dictionary = {
     matrixHint:
       'Crear, Editar y Eliminar incluyen Ver. Los usuarios sin rol solo pueden ver el resumen del panel.',
     notFound: 'No se encontró el rol solicitado.',
+    editLabel: 'Editar el rol {name}',
+    deleteLabel: 'Eliminar el rol {name}',
     deleteTitle: '¿Eliminar rol?',
     deleteDescription:
       'El rol {name} se eliminará permanentemente. Esta acción no se puede deshacer.',

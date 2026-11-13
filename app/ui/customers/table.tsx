@@ -8,13 +8,15 @@ import { getTranslations } from '@/app/lib/i18n/server';
 export default async function CustomersTable({
   query,
   currentPage,
+  pageSize,
 }: {
   query: string;
   currentPage: number;
+  pageSize: number;
 }) {
   const [t, customers, canUpdate, canDelete] = await Promise.all([
     getTranslations(),
-    fetchFilteredCustomers(query, currentPage),
+    fetchFilteredCustomers(query, currentPage, pageSize),
     can('customers:update'),
     can('customers:delete'),
   ]);
@@ -68,10 +70,11 @@ export default async function CustomersTable({
                         })}
                       </p>
                       <div className="flex justify-end gap-2">
-                        {canUpdate && <UpdateCustomer id={customer.id} />}
+                        {canUpdate && <UpdateCustomer id={customer.id} name={customer.name} />}
                         {canDelete && (
                           <DeleteCustomer
                             id={customer.id}
+                            name={customer.name}
                             hasInvoices={Number(customer.total_invoices) > 0}
                           />
                         )}
@@ -134,10 +137,11 @@ export default async function CustomersTable({
                       </td>
                       <td className="whitespace-nowrap bg-white py-3 pl-6 pr-3 group-first-of-type:rounded-md group-last-of-type:rounded-md">
                         <div className="flex justify-end gap-3">
-                          {canUpdate && <UpdateCustomer id={customer.id} />}
+                          {canUpdate && <UpdateCustomer id={customer.id} name={customer.name} />}
                           {canDelete && (
                             <DeleteCustomer
                               id={customer.id}
+                              name={customer.name}
                               hasInvoices={Number(customer.total_invoices) > 0}
                             />
                           )}

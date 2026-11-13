@@ -29,6 +29,7 @@ export default async function SideNav() {
       <Link
         className="mb-2 flex h-20 items-end justify-start rounded-md bg-blue-600 p-4 md:h-40"
         href="/"
+        aria-label={t('nav.logo')}
       >
         <div className="w-32 text-white md:w-40">
           <AcmeLogo />
@@ -51,7 +52,9 @@ export default async function SideNav() {
           await signOut({ redirectTo: '/' });
         }}
         >
-          <button className="flex h-[48px] w-full grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3">
+          <button
+            aria-label={t('nav.signOut')}
+            className="flex h-[48px] w-full grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3">
             <PowerIcon className="w-6" />
             <div className="hidden md:block">{t('nav.signOut')}</div>
           </button>

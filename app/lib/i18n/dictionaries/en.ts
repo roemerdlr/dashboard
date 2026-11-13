@@ -22,6 +22,14 @@ const en = {
     search: 'Search',
     breadcrumb: 'Breadcrumb',
   },
+  pagination: {
+    label: 'Pagination',
+    showing: 'Showing {from}–{to} of {total}',
+    rowsPerPage: 'Rows per page',
+    previous: 'Previous page',
+    next: 'Next page',
+    page: 'Page {page}',
+  },
   metadata: {
     description: 'The official Next.js Learn Dashboard built with App Router.',
     login: 'Login',
@@ -46,6 +54,7 @@ const en = {
     users: 'Users',
     roles: 'Roles',
     signOut: 'Sign Out',
+    logo: 'Acme home page',
   },
   home: {
     welcome: 'Welcome to Acme.',
@@ -99,6 +108,8 @@ const en = {
     amountPlaceholder: 'Enter USD amount',
     setStatus: 'Set the invoice status',
     notFound: 'Could not find the requested invoice.',
+    editLabel: 'Edit the {amount} invoice for {customer}',
+    deleteLabel: 'Delete the {amount} invoice for {customer}',
     deleteTitle: 'Delete invoice?',
     deleteDescription:
       "The {amount} invoice for {customer} will be permanently deleted. This can't be undone.",
@@ -126,6 +137,8 @@ const en = {
     paid: 'Paid',
     invoiceCount: { one: '{count} invoice', other: '{count} invoices' },
     notFound: 'Could not find the requested customer.',
+    editLabel: 'Edit customer {name}',
+    deleteLabel: 'Delete customer {name}',
     deleteTitle: 'Delete customer?',
     deleteDescription:
       "{name} will be permanently deleted. This can't be undone.",
@@ -166,6 +179,8 @@ const en = {
     passwordPlaceholder: 'At least 6 characters',
     passwordKeepPlaceholder: 'Leave empty to keep the current password',
     notFound: 'Could not find the requested user.',
+    editLabel: 'Edit user {name}',
+    deleteLabel: 'Delete user {name}',
     deleteTitle: 'Delete user?',
     deleteDescription:
       "{name} will lose access to the dashboard. This can't be undone.",
@@ -206,6 +221,8 @@ const en = {
     matrixHint:
       'Create, Edit and Delete include View. Users without a role can only see the dashboard overview.',
     notFound: 'Could not find the requested role.',
+    editLabel: 'Edit role {name}',
+    deleteLabel: 'Delete role {name}',
     deleteTitle: 'Delete role?',
     deleteDescription:
       "The {name} role will be permanently deleted. This can't be undone.",

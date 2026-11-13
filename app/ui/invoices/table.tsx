@@ -11,14 +11,16 @@ import { INTL_LOCALES } from '@/app/lib/i18n/config';
 export default async function InvoicesTable({
   query,
   currentPage,
+  pageSize,
 }: {
   query: string;
   currentPage: number;
+  pageSize: number;
 }) {
   const [t, locale, invoices, canUpdate, canDelete] = await Promise.all([
     getTranslations(),
     getLocale(),
-    fetchFilteredInvoices(query, currentPage),
+    fetchFilteredInvoices(query, currentPage, pageSize),
     can('invoices:update'),
     can('invoices:delete'),
   ]);
@@ -58,7 +60,11 @@ export default async function InvoicesTable({
                     <p>{formatDateToLocal(invoice.date, INTL_LOCALES[locale])}</p>
                   </div>
                   <div className="flex justify-end gap-2">
-                    {canUpdate && <UpdateInvoice id={invoice.id} />}
+                    {canUpdate && <UpdateInvoice
+                        id={invoice.id}
+                        customerName={invoice.name}
+                        amount={formatCurrency(invoice.amount)}
+                      />}
                     {canDelete && (
                       <DeleteInvoice
                         id={invoice.id}
@@ -127,7 +133,11 @@ export default async function InvoicesTable({
                   </td>
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     <div className="flex justify-end gap-3">
-                      {canUpdate && <UpdateInvoice id={invoice.id} />}
+                      {canUpdate && <UpdateInvoice
+                        id={invoice.id}
+                        customerName={invoice.name}
+                        amount={formatCurrency(invoice.amount)}
+                      />}
                       {canDelete && (
                         <DeleteInvoice
                         id={invoice.id}

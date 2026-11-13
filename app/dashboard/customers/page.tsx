@@ -4,9 +4,10 @@ import { lusitana } from '@/app/ui/fonts';
 import Search from '@/app/ui/search';
 import Table from '@/app/ui/customers/table';
 import { CreateCustomer } from '@/app/ui/customers/buttons';
-import Pagination from '@/app/ui/invoices/pagination';
+import Pagination from '@/app/ui/pagination';
 import { CustomersTableSkeleton } from '@/app/ui/skeletons';
-import { fetchCustomersPages } from '@/app/lib/data';
+import { fetchCustomersCount } from '@/app/lib/data';
+import { getTotalPages, parsePage, parsePageSize } from '@/app/lib/pagination';
 import { can, requirePermission } from '@/app/lib/auth-guard';
 import { getTranslations } from '@/app/lib/i18n/server';
 
@@ -19,6 +20,7 @@ export default async function Page(props: {
   searchParams?: Promise<{
     query?: string;
     page?: string;
+    pageSize?: string;
   }>;
 }) {
   await requirePermission('customers:read');
@@ -26,8 +28,12 @@ export default async function Page(props: {
   const canCreate = await can('customers:create');
   const searchParams = await props.searchParams;
   const query = searchParams?.query || '';
-  const currentPage = Number(searchParams?.page) || 1;
-  const totalPages = await fetchCustomersPages(query);
+  const pageSize = parsePageSize(searchParams?.pageSize);
+  const totalItems = await fetchCustomersCount(query);
+  const currentPage = parsePage(
+    searchParams?.page,
+    getTotalPages(totalItems, pageSize),
+  );
 
   return (
     <div className="w-full">
@@ -36,11 +42,18 @@ export default async function Page(props: {
         <Search placeholder={t('customers.search')} />
         {canCreate && <CreateCustomer />}
       </div>
-      <Suspense key={query + currentPage} fallback={<CustomersTableSkeleton />}>
-        <Table query={query} currentPage={currentPage} />
+      <Suspense
+        key={`${query}|${currentPage}|${pageSize}`}
+        fallback={<CustomersTableSkeleton />}
+      >
+        <Table query={query} currentPage={currentPage} pageSize={pageSize} />
       </Suspense>
       <div className="mt-5 flex w-full justify-center">
-        <Pagination totalPages={totalPages} />
+        <Pagination
+          totalItems={totalItems}
+          currentPage={currentPage}
+          pageSize={pageSize}
+        />
       </div>
     </div>
   );

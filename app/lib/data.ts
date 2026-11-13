@@ -96,12 +96,13 @@ async function fetchCardDataQuery() {
   }
 }
 
-const ITEMS_PER_PAGE = 6;
+// Page sizes are validated by parsePageSize (app/lib/pagination.ts).
 async function fetchFilteredInvoicesQuery(
   query: string,
   currentPage: number,
+  pageSize: number,
 ) {
-  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+  const offset = (currentPage - 1) * pageSize;
 
   try {
     const invoices = await sql<InvoicesTable[]>`
@@ -121,8 +122,8 @@ async function fetchFilteredInvoicesQuery(
         invoices.amount::text ILIKE ${`%${query}%`} OR
         invoices.date::text ILIKE ${`%${query}%`} OR
         invoices.status ILIKE ${`%${query}%`}
-      ORDER BY invoices.date DESC
-      LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
+      ORDER BY invoices.date DESC, invoices.id
+      LIMIT ${pageSize} OFFSET ${offset}
     `;
 
     return invoices;
@@ -132,7 +133,8 @@ async function fetchFilteredInvoicesQuery(
   }
 }
 
-async function fetchInvoicesPagesQuery(query: string) {
+// Number of invoices matching the search, for the paginator.
+async function fetchInvoicesCountQuery(query: string) {
   try {
     const data = await sql`SELECT COUNT(*)
     FROM invoices
@@ -145,8 +147,7 @@ async function fetchInvoicesPagesQuery(query: string) {
       invoices.status ILIKE ${`%${query}%`}
   `;
 
-    const totalPages = Math.ceil(Number(data[0].count) / ITEMS_PER_PAGE);
-    return totalPages;
+    return Number(data[0].count);
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch total number of invoices.');
@@ -198,8 +199,9 @@ async function fetchCustomersQuery() {
 async function fetchFilteredCustomersQuery(
   query: string,
   currentPage: number,
+  pageSize: number,
 ) {
-  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+  const offset = (currentPage - 1) * pageSize;
 
   try {
     const data = await sql<CustomersTableType[]>`
@@ -217,8 +219,8 @@ async function fetchFilteredCustomersQuery(
 		  customers.name ILIKE ${`%${query}%`} OR
         customers.email ILIKE ${`%${query}%`}
 		GROUP BY customers.id, customers.name, customers.email, customers.image_url
-		ORDER BY customers.name ASC
-		LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
+		ORDER BY customers.name ASC, customers.id
+		LIMIT ${pageSize} OFFSET ${offset}
 	  `;
 
     const customers = data.map((customer) => ({
@@ -234,7 +236,8 @@ async function fetchFilteredCustomersQuery(
   }
 }
 
-async function fetchCustomersPagesQuery(query: string) {
+// Number of customers matching the search, for the paginator.
+async function fetchCustomersCountQuery(query: string) {
   try {
     const data = await sql`SELECT COUNT(*)
     FROM customers
@@ -243,8 +246,7 @@ async function fetchCustomersPagesQuery(query: string) {
       customers.email ILIKE ${`%${query}%`}
   `;
 
-    const totalPages = Math.ceil(Number(data[0].count) / ITEMS_PER_PAGE);
-    return totalPages;
+    return Number(data[0].count);
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch total number of customers.');
@@ -375,9 +377,9 @@ export const fetchFilteredInvoices = cachedQuery(
   'fetchFilteredInvoices',
   [CACHE_TAGS.invoices, CACHE_TAGS.customers],
 );
-export const fetchInvoicesPages = cachedQuery(
-  fetchInvoicesPagesQuery,
-  'fetchInvoicesPages',
+export const fetchInvoicesCount = cachedQuery(
+  fetchInvoicesCountQuery,
+  'fetchInvoicesCount',
   [CACHE_TAGS.invoices, CACHE_TAGS.customers],
 );
 export const fetchInvoiceById = cachedQuery(
@@ -395,9 +397,9 @@ export const fetchFilteredCustomers = cachedQuery(
   'fetchFilteredCustomers',
   [CACHE_TAGS.customers, CACHE_TAGS.invoices],
 );
-export const fetchCustomersPages = cachedQuery(
-  fetchCustomersPagesQuery,
-  'fetchCustomersPages',
+export const fetchCustomersCount = cachedQuery(
+  fetchCustomersCountQuery,
+  'fetchCustomersCount',
   [CACHE_TAGS.customers],
 );
 export const fetchCustomerById = cachedQuery(

@@ -9,11 +9,14 @@ import { useTranslations } from '@/app/lib/i18n/client';
 // Uses the native <dialog>, which provides the backdrop, Esc-to-close and focus trapping.
 export function ConfirmDeleteButton({
   action,
+  label,
   title,
   description,
   disabledReason,
 }: {
   action: () => Promise<void>;
+  // Accessible name of the trash button, naming the item (e.g. "Delete user Ana").
+  label: string;
   title: string;
   description: string;
   // When set, the button is disabled and this explains why (shown on hover).
@@ -35,10 +38,11 @@ export function ConfirmDeleteButton({
         type="button"
         onClick={() => dialogRef.current?.showModal()}
         disabled={!!disabledReason}
-        title={disabledReason ?? t('common.delete')}
+        aria-label={label}
+        aria-haspopup="dialog"
+        title={disabledReason ?? label}
         className="rounded-md border p-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
       >
-        <span className="sr-only">{t('common.delete')}</span>
         <TrashIcon className="w-5" />
       </button>
 

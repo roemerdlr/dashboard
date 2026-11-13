@@ -33,7 +33,7 @@ export default async function RolesTable() {
       </span>
     ) : (
       <>
-        {canUpdate && <UpdateRole id={role.id} />}
+        {canUpdate && <UpdateRole id={role.id} name={role.name} />}
         {canDelete && (
           <DeleteRole
             id={role.id}

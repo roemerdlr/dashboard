@@ -15,7 +15,7 @@ export default async function UsersTable() {
 
   const actions = (user: (typeof users)[number]) => (
     <>
-      {canUpdate && <UpdateUser id={user.id} />}
+      {canUpdate && <UpdateUser id={user.id} name={user.name} />}
       {canDelete && (
         <DeleteUser
           id={user.id}

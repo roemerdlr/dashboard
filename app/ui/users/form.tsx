@@ -12,6 +12,7 @@ import { RoleField, UserForm as UserFormData } from '@/app/lib/definitions';
 import { Button } from '@/app/ui/button';
 import { createUser, updateUser, UserState } from '@/app/lib/admin-actions';
 import { useTranslations } from '@/app/lib/i18n/client';
+import { Select } from '@/app/ui/form/element/select';
 
 const inputClass =
   'peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500';
@@ -91,23 +92,18 @@ export default function UserForm({
           <label htmlFor="roleId" className="mb-2 block text-sm font-medium">
             {t('users.role')}
           </label>
-          <div className="relative">
-            <select
-              id="roleId"
-              name="roleId"
-              defaultValue={user?.role_id ?? ''}
-              className={`${inputClass} cursor-pointer`}
-              aria-describedby="roleId-error"
-            >
-              <option value="">{t('users.noRoleOption')}</option>
-              {roles.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.name}
-                </option>
-              ))}
-            </select>
-            <ShieldCheckIcon className={iconClass} />
-          </div>
+          <Select
+            id="roleId"
+            name="roleId"
+            icon={ShieldCheckIcon}
+            defaultValue={user?.role_id ?? ''}
+            options={[
+              { value: '', label: t('users.noRoleOption') },
+              ...roles.map((role) => ({ value: role.id, label: role.name })),
+            ]}
+            aria-describedby="roleId-error"
+            aria-invalid={!!state.errors?.roleId}
+          />
           <FieldErrors id="roleId-error" errors={state.errors?.roleId} />
         </div>
 
