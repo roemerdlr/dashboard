@@ -1,6 +1,8 @@
 import clsx from 'clsx';
+import { getTranslations } from '@/app/lib/i18n/server';
 
-export function RoleBadge({ name }: { name: string | null }) {
+export async function RoleBadge({ name }: { name: string | null }) {
+  const t = await getTranslations();
   return (
     <span
       className={clsx(
@@ -8,7 +10,7 @@ export function RoleBadge({ name }: { name: string | null }) {
         name ? 'bg-gray-100 text-gray-700' : 'bg-yellow-50 text-yellow-800',
       )}
     >
-      {name ?? 'No role'}
+      {name ?? t('roles.noRole')}
     </span>
   );
 }

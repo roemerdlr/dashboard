@@ -5,12 +5,15 @@ import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
 import Form from '@/app/ui/customers/form';
 import { fetchCustomerById } from '@/app/lib/data';
 import { requirePermission } from '@/app/lib/auth-guard';
+import { getTranslations } from '@/app/lib/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'Edit Customer',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations();
+  return { title: t('metadata.editCustomer') };
+}
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
+  const t = await getTranslations();
   await requirePermission('customers:update');
   const { id } = await props.params;
 
@@ -28,9 +31,9 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     <main>
       <Breadcrumbs
         breadcrumbs={[
-          { label: 'Customers', href: '/dashboard/customers' },
+          { label: t('customers.title'), href: '/dashboard/customers' },
           {
-            label: 'Edit Customer',
+            label: t('customers.edit'),
             href: `/dashboard/customers/${id}/edit`,
             active: true,
           },

@@ -5,17 +5,17 @@ import { useActionState, useState } from 'react';
 import { RoleForm as RoleFormData } from '@/app/lib/definitions';
 import {
   ACTIONS,
-  ACTION_LABELS,
   RESOURCES,
-  RESOURCE_LABELS,
   type Permission,
   type Resource,
 } from '@/app/lib/permissions';
+import { useTranslations } from '@/app/lib/i18n/client';
 import { Button } from '@/app/ui/button';
 import { createRole, updateRole, RoleState } from '@/app/lib/admin-actions';
 
 // Used for both create (no `role`) and edit (with `role`).
 export default function RoleForm({ role }: { role?: RoleFormData }) {
+  const t = useTranslations();
   const initialState: RoleState = { message: null, errors: {} };
   const action = role ? updateRole.bind(null, role.id) : createRole;
   const [state, formAction, isPending] = useActionState(action, initialState);
@@ -50,13 +50,13 @@ export default function RoleForm({ role }: { role?: RoleFormData }) {
         {/* Name */}
         <div className="mb-4">
           <label htmlFor="name" className="mb-2 block text-sm font-medium">
-            Name
+            {t('common.name')}
           </label>
           <input
             id="name"
             name="name"
             type="text"
-            placeholder="e.g. Accountant"
+            placeholder={t('roles.namePlaceholder')}
             defaultValue={role?.name}
             className="block w-full rounded-md border border-gray-200 py-2 text-sm outline-2 placeholder:text-gray-500"
             aria-describedby="name-error"
@@ -73,13 +73,13 @@ export default function RoleForm({ role }: { role?: RoleFormData }) {
         {/* Description */}
         <div className="mb-6">
           <label htmlFor="description" className="mb-2 block text-sm font-medium">
-            Description
+            {t('roles.description')}
           </label>
           <textarea
             id="description"
             name="description"
             rows={2}
-            placeholder="What is this role for?"
+            placeholder={t('roles.descriptionPlaceholder')}
             defaultValue={role?.description}
             className="block w-full rounded-md border border-gray-200 py-2 text-sm outline-2 placeholder:text-gray-500"
           />
@@ -87,17 +87,19 @@ export default function RoleForm({ role }: { role?: RoleFormData }) {
 
         {/* Permissions matrix */}
         <fieldset>
-          <legend className="mb-2 block text-sm font-medium">Permissions</legend>
+          <legend className="mb-2 block text-sm font-medium">
+            {t('roles.permissions')}
+          </legend>
           <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 text-left">
                 <tr>
                   <th scope="col" className="px-4 py-3 font-medium">
-                    Resource
+                    {t('roles.resource')}
                   </th>
                   {ACTIONS.map((action) => (
                     <th key={action} scope="col" className="px-4 py-3 text-center font-medium">
-                      {ACTION_LABELS[action]}
+                      {t(`roles.actions.${action}`)}
                     </th>
                   ))}
                 </tr>
@@ -106,7 +108,7 @@ export default function RoleForm({ role }: { role?: RoleFormData }) {
                 {RESOURCES.map((resource) => (
                   <tr key={resource}>
                     <th scope="row" className="px-4 py-3 text-left font-normal">
-                      {RESOURCE_LABELS[resource]}
+                      {t(`roles.resources.${resource}`)}
                     </th>
                     {ACTIONS.map((action) => {
                       const permission = `${resource}:${action}`;
@@ -118,7 +120,7 @@ export default function RoleForm({ role }: { role?: RoleFormData }) {
                             value={permission}
                             checked={granted.has(permission)}
                             onChange={() => toggle(resource, action)}
-                            aria-label={`${ACTION_LABELS[action]} ${RESOURCE_LABELS[resource]}`}
+                            aria-label={`${t(`roles.actions.${action}`)} ${t(`roles.resources.${resource}`)}`}
                             className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600"
                           />
                         </td>
@@ -130,8 +132,7 @@ export default function RoleForm({ role }: { role?: RoleFormData }) {
             </table>
           </div>
           <p className="mt-2 text-xs text-gray-500">
-            Create, Edit and Delete include View. Users without a role can only
-            see the dashboard overview.
+            {t('roles.matrixHint')}
           </p>
         </fieldset>
 
@@ -146,10 +147,10 @@ export default function RoleForm({ role }: { role?: RoleFormData }) {
           href="/dashboard/roles"
           className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
         >
-          Cancel
+          {t('common.cancel')}
         </Link>
         <Button type="submit" aria-disabled={isPending}>
-          {role ? 'Save Role' : 'Create Role'}
+          {role ? t('roles.save') : t('roles.create')}
         </Button>
       </div>
     </form>

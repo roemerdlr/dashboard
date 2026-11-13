@@ -3,6 +3,7 @@ import { isUploadedCustomerImage } from '@/app/lib/customer-image';
 import { fetchFilteredCustomers } from '@/app/lib/data';
 import { can } from '@/app/lib/auth-guard';
 import { UpdateCustomer, DeleteCustomer } from '@/app/ui/customers/buttons';
+import { getTranslations } from '@/app/lib/i18n/server';
 
 export default async function CustomersTable({
   query,
@@ -11,7 +12,8 @@ export default async function CustomersTable({
   query: string;
   currentPage: number;
 }) {
-  const [customers, canUpdate, canDelete] = await Promise.all([
+  const [t, customers, canUpdate, canDelete] = await Promise.all([
+    getTranslations(),
     fetchFilteredCustomers(query, currentPage),
     can('customers:update'),
     can('customers:delete'),
@@ -37,7 +39,7 @@ export default async function CustomersTable({
                               src={customer.image_url}
                               unoptimized={isUploadedCustomerImage(customer.image_url)}
                               className="rounded-full"
-                              alt={`${customer.name}'s profile picture`}
+                              alt={t('common.profilePicture', { name: customer.name })}
                               width={28}
                               height={28}
                             />
@@ -51,16 +53,20 @@ export default async function CustomersTable({
                     </div>
                     <div className="flex w-full items-center justify-between border-b py-5">
                       <div className="flex w-1/2 flex-col">
-                        <p className="text-xs">Pending</p>
+                        <p className="text-xs">{t('customers.pending')}</p>
                         <p className="font-medium">{customer.total_pending}</p>
                       </div>
                       <div className="flex w-1/2 flex-col">
-                        <p className="text-xs">Paid</p>
+                        <p className="text-xs">{t('customers.paid')}</p>
                         <p className="font-medium">{customer.total_paid}</p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between pt-4 text-sm">
-                      <p>{customer.total_invoices} invoices</p>
+                      <p>
+                        {t('customers.invoiceCount', {
+                          count: Number(customer.total_invoices),
+                        })}
+                      </p>
                       <div className="flex justify-end gap-2">
                         {canUpdate && <UpdateCustomer id={customer.id} />}
                         {canDelete && (
@@ -78,22 +84,22 @@ export default async function CustomersTable({
                 <thead className="rounded-md bg-gray-50 text-left text-sm font-normal">
                   <tr>
                     <th scope="col" className="px-4 py-5 font-medium sm:pl-6">
-                      Name
+                      {t('common.name')}
                     </th>
                     <th scope="col" className="px-3 py-5 font-medium">
-                      Email
+                      {t('common.email')}
                     </th>
                     <th scope="col" className="px-3 py-5 font-medium">
-                      Total Invoices
+                      {t('customers.totalInvoices')}
                     </th>
                     <th scope="col" className="px-3 py-5 font-medium">
-                      Total Pending
+                      {t('customers.totalPending')}
                     </th>
                     <th scope="col" className="px-4 py-5 font-medium">
-                      Total Paid
+                      {t('customers.totalPaid')}
                     </th>
                     <th scope="col" className="relative py-3 pl-6 pr-3">
-                      <span className="sr-only">Edit</span>
+                      <span className="sr-only">{t('common.edit')}</span>
                     </th>
                   </tr>
                 </thead>
@@ -107,7 +113,7 @@ export default async function CustomersTable({
                             src={customer.image_url}
                             unoptimized={isUploadedCustomerImage(customer.image_url)}
                             className="rounded-full"
-                            alt={`${customer.name}'s profile picture`}
+                            alt={t('common.profilePicture', { name: customer.name })}
                             width={28}
                             height={28}
                           />

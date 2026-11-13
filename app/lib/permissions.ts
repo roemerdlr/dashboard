@@ -17,19 +17,7 @@ export function isPermission(value: string): value is Permission {
   return (ALL_PERMISSIONS as string[]).includes(value);
 }
 
-export const RESOURCE_LABELS: Record<Resource, string> = {
-  invoices: 'Invoices',
-  customers: 'Customers',
-  users: 'Users',
-  roles: 'Roles',
-};
-
-export const ACTION_LABELS: Record<Action, string> = {
-  read: 'View',
-  create: 'Create',
-  update: 'Edit',
-  delete: 'Delete',
-};
+// Display labels live in the dictionaries: roles.resources.* and roles.actions.*
 
 // Roles created by /seed. Fixed ids so seeding is idempotent.
 // The Admin role is a "system" role: it always has every permission and

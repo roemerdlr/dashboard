@@ -3,6 +3,7 @@
 import { ExclamationTriangleIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useId, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
+import { useTranslations } from '@/app/lib/i18n/client';
 
 // A trash button that opens a confirmation modal before running `action`.
 // Uses the native <dialog>, which provides the backdrop, Esc-to-close and focus trapping.
@@ -18,6 +19,7 @@ export function ConfirmDeleteButton({
   // When set, the button is disabled and this explains why (shown on hover).
   disabledReason?: string;
 }) {
+  const t = useTranslations();
   const dialogRef = useRef<HTMLDialogElement>(null);
   // Every row renders its own dialog, so the title id must be unique.
   const titleId = useId();
@@ -33,10 +35,10 @@ export function ConfirmDeleteButton({
         type="button"
         onClick={() => dialogRef.current?.showModal()}
         disabled={!!disabledReason}
-        title={disabledReason ?? 'Delete'}
+        title={disabledReason ?? t('common.delete')}
         className="rounded-md border p-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
       >
-        <span className="sr-only">Delete</span>
+        <span className="sr-only">{t('common.delete')}</span>
         <TrashIcon className="w-5" />
       </button>
 
@@ -75,6 +77,7 @@ export function ConfirmDeleteButton({
 }
 
 function CancelButton({ onClick }: { onClick: () => void }) {
+  const t = useTranslations();
   const { pending } = useFormStatus();
   return (
     <button
@@ -85,12 +88,13 @@ function CancelButton({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
     >
-      Cancel
+      {t('common.cancel')}
     </button>
   );
 }
 
 function ConfirmButton() {
+  const t = useTranslations();
   const { pending } = useFormStatus();
   return (
     <button
@@ -98,7 +102,7 @@ function ConfirmButton() {
       disabled={pending}
       className="flex h-10 items-center rounded-lg bg-red-600 px-4 text-sm font-medium text-white transition-colors hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:cursor-not-allowed disabled:opacity-50"
     >
-      {pending ? 'Deleting…' : 'Delete'}
+      {pending ? t('common.deleting') : t('common.delete')}
     </button>
   );
 }

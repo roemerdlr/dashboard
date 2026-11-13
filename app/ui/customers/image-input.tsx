@@ -7,6 +7,8 @@ import {
   CUSTOMER_IMAGE_TYPES,
   validateCustomerImage,
 } from '@/app/lib/customer-image';
+import type { MessageKey } from '@/app/lib/i18n/translator';
+import { useTranslations } from '@/app/lib/i18n/client';
 
 // Image picker with drag-and-drop, click-to-browse and a live preview.
 // The chosen file lives in a regular <input type="file" name="image">,
@@ -18,10 +20,11 @@ export default function ImageInput({
   currentImageUrl?: string;
   errors?: string[];
 }) {
+  const t = useTranslations();
   const inputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
-  const [clientError, setClientError] = useState<string | null>(null);
+  const [clientError, setClientError] = useState<MessageKey | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   // Free the object URL when it's replaced or the component unmounts.
@@ -84,18 +87,20 @@ export default function ImageInput({
   }
 
   const shownImage = previewUrl ?? currentImageUrl;
-  const errorMessages = clientError ? [clientError] : errors;
+  const errorMessages = clientError ? [t(clientError)] : errors;
 
   return (
     <div className="mb-4">
-      <span className="mb-2 block text-sm font-medium">Image</span>
+      <span className="mb-2 block text-sm font-medium">
+        {t('customers.image.label')}
+      </span>
       <div className="flex items-center gap-4">
         {shownImage ? (
           // A plain <img> because previews are local blob: URLs, which next/image can't load.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={shownImage}
-            alt="Customer image preview"
+            alt={t('customers.image.preview')}
             className="h-16 w-16 flex-none rounded-full object-cover"
           />
         ) : (
@@ -124,12 +129,14 @@ export default function ImageInput({
             <span className="font-medium text-gray-900">{fileName}</span>
           ) : (
             <span>
-              <span className="font-medium text-blue-600">Choose an image</span>{' '}
-              or drag it here
+              <span className="font-medium text-blue-600">
+                {t('customers.image.choose')}
+              </span>{' '}
+              {t('customers.image.orDrag')}
             </span>
           )}
           <span className="mt-1 text-xs text-gray-500">
-            PNG, JPEG, WebP or GIF, up to 2 MB
+            {t('customers.image.hint')}
           </span>
           <input
             ref={inputRef}
@@ -150,7 +157,9 @@ export default function ImageInput({
           onClick={() => selectFile(undefined)}
           className="mt-2 text-sm text-gray-600 underline hover:text-gray-900"
         >
-          {currentImageUrl ? 'Keep current image' : 'Remove image'}
+          {currentImageUrl
+            ? t('customers.image.keepCurrent')
+            : t('customers.image.remove')}
         </button>
       )}
 

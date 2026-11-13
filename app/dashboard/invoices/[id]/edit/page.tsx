@@ -4,12 +4,15 @@ import { fetchInvoiceById, fetchCustomers } from '@/app/lib/data';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { requirePermission } from '@/app/lib/auth-guard';
+import { getTranslations } from '@/app/lib/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'Edit Invoice',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations();
+  return { title: t('metadata.editInvoice') };
+}
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
+    const t = await getTranslations();
     await requirePermission('invoices:update');
     const params = await props.params;
     const id = params.id;
@@ -25,9 +28,9 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         <main>
             <Breadcrumbs
                 breadcrumbs={[
-                    { label: 'Invoices', href: '/dashboard/invoices' },
+                    { label: t('invoices.title'), href: '/dashboard/invoices' },
                     {
-                        label: 'Edit Invoice',
+                        label: t('invoices.edit'),
                         href: `/dashboard/invoices/${id}/edit`,
                         active: true,
                     },

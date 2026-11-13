@@ -9,16 +9,19 @@ import {
   CardsSkeleton
 } from '@/app/ui/skeletons';
 import { Metadata } from 'next';
+import { getTranslations } from '@/app/lib/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'Dashboard',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations();
+  return { title: t('metadata.dashboard') };
+}
  
 export default async function Page() {
+  const t = await getTranslations();
   return (
     <main>
       <h1 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
-        Dashboard
+        {t('dashboard.title')}
       </h1>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Suspense fallback={<CardsSkeleton />}>

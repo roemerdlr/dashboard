@@ -8,6 +8,8 @@ import { CACHE_TAGS } from '@/app/lib/cache';
 import { redirect } from 'next/navigation';
 import { requirePermission } from '@/app/lib/auth-guard';
 import { isPermission } from '@/app/lib/permissions';
+import { getTranslations } from '@/app/lib/i18n/server';
+import type { Translator } from '@/app/lib/i18n/translator';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
@@ -35,21 +37,23 @@ async function isSystemRole(roleId: string | null) {
 
 // ---------- Users ----------
 
-const UserFormSchema = z.object({
-  name: z.string().trim().min(1, { message: 'Please enter a name.' }),
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .email({ message: 'Please enter a valid email address.' }),
-  // '' means "no role": the user can sign in but only sees the overview.
-  roleId: z
-    .string()
-    .uuid({ message: 'Please select a valid role.' })
-    .or(z.literal(''))
-    .transform((value) => value || null),
-  password: z.string(),
-});
+// Built per request so validation messages use the request's language.
+const UserFormSchema = (t: Translator) =>
+  z.object({
+    name: z.string().trim().min(1, { message: t('users.errors.name') }),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email({ message: t('users.errors.email') }),
+    // '' means "no role": the user can sign in but only sees the overview.
+    roleId: z
+      .string()
+      .uuid({ message: t('users.errors.role') })
+      .or(z.literal(''))
+      .transform((value) => value || null),
+    password: z.string(),
+  });
 
 export type UserState = {
   errors?: {
@@ -61,8 +65,8 @@ export type UserState = {
   message?: string | null;
 };
 
-function parseUserForm(formData: FormData) {
-  return UserFormSchema.safeParse({
+function parseUserForm(formData: FormData, t: Translator) {
+  return UserFormSchema(t).safeParse({
     name: formData.get('name'),
     email: formData.get('email'),
     roleId: formData.get('roleId') ?? '',
@@ -70,24 +74,23 @@ function parseUserForm(formData: FormData) {
   });
 }
 
-const PASSWORD_ERROR = 'Password must be at least 6 characters.';
-
 export async function createUser(
   prevState: UserState,
   formData: FormData,
 ): Promise<UserState> {
   await requirePermission('users:create');
+  const t = await getTranslations();
 
-  const validated = parseUserForm(formData);
+  const validated = parseUserForm(formData, t);
   const passwordTooShort =
     validated.success && validated.data.password.length < 6;
   if (!validated.success || passwordTooShort) {
     return {
       errors: {
         ...(validated.success ? {} : validated.error.flatten().fieldErrors),
-        ...(passwordTooShort ? { password: [PASSWORD_ERROR] } : {}),
+        ...(passwordTooShort ? { password: [t('users.errors.password')] } : {}),
       },
-      message: 'Missing Fields. Failed to Create User.',
+      message: t('users.errors.missingFieldsCreate'),
     };
   }
 
@@ -101,9 +104,9 @@ export async function createUser(
     `;
   } catch (error) {
     if (isUniqueViolation(error)) {
-      return { errors: { email: ['A user with this email already exists.'] } };
+      return { errors: { email: [t('users.errors.emailTaken')] } };
     }
-    return { message: 'Database Error: Failed to Create User.' };
+    return { message: t('users.errors.databaseCreate') };
   }
 
   updateTag(CACHE_TAGS.users);
@@ -118,8 +121,9 @@ export async function updateUser(
   formData: FormData,
 ): Promise<UserState> {
   await requirePermission('users:update');
+  const t = await getTranslations();
 
-  const validated = parseUserForm(formData);
+  const validated = parseUserForm(formData, t);
   // Password is optional on edit: empty keeps the current one.
   const passwordTooShort =
     validated.success &&
@@ -129,9 +133,9 @@ export async function updateUser(
     return {
       errors: {
         ...(validated.success ? {} : validated.error.flatten().fieldErrors),
-        ...(passwordTooShort ? { password: [PASSWORD_ERROR] } : {}),
+        ...(passwordTooShort ? { password: [t('users.errors.password')] } : {}),
       },
-      message: 'Missing Fields. Failed to Update User.',
+      message: t('users.errors.missingFieldsUpdate'),
     };
   }
 
@@ -142,7 +146,7 @@ export async function updateUser(
     SELECT role_id FROM users WHERE id = ${id}
   `;
   if (!current) {
-    return { message: 'This user no longer exists.' };
+    return { message: t('users.errors.notFound') };
   }
   if (
     (await isSystemRole(current.role_id)) &&
@@ -151,9 +155,9 @@ export async function updateUser(
   ) {
     return {
       errors: {
-        roleId: ['This is the last Admin. Give another user the Admin role first.'],
+        roleId: [t('users.errors.lastAdmin')],
       },
-      message: 'Failed to Update User.',
+      message: t('users.errors.updateFailed'),
     };
   }
 
@@ -174,9 +178,9 @@ export async function updateUser(
     }
   } catch (error) {
     if (isUniqueViolation(error)) {
-      return { errors: { email: ['A user with this email already exists.'] } };
+      return { errors: { email: [t('users.errors.emailTaken')] } };
     }
-    return { message: 'Database Error: Failed to Update User.' };
+    return { message: t('users.errors.databaseUpdate') };
   }
 
   updateTag(CACHE_TAGS.users);
@@ -211,14 +215,15 @@ export async function deleteUser(id: string) {
 
 // ---------- Roles ----------
 
-const RoleFormSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, { message: 'Please enter a role name.' })
-    .max(255),
-  description: z.string().trim().max(1000),
-});
+const RoleFormSchema = (t: Translator) =>
+  z.object({
+    name: z
+      .string()
+      .trim()
+      .min(1, { message: t('roles.errors.name') })
+      .max(255),
+    description: z.string().trim().max(1000),
+  });
 
 export type RoleState = {
   errors?: {
@@ -228,8 +233,8 @@ export type RoleState = {
   message?: string | null;
 };
 
-function parseRoleForm(formData: FormData) {
-  const validated = RoleFormSchema.safeParse({
+function parseRoleForm(formData: FormData, t: Translator) {
+  const validated = RoleFormSchema(t).safeParse({
     name: formData.get('name'),
     description: formData.get('description') ?? '',
   });
@@ -245,12 +250,13 @@ export async function createRole(
   formData: FormData,
 ): Promise<RoleState> {
   await requirePermission('roles:create');
+  const t = await getTranslations();
 
-  const { validated, permissions } = parseRoleForm(formData);
+  const { validated, permissions } = parseRoleForm(formData, t);
   if (!validated.success) {
     return {
       errors: validated.error.flatten().fieldErrors,
-      message: 'Missing Fields. Failed to Create Role.',
+      message: t('roles.errors.missingFieldsCreate'),
     };
   }
   const { name, description } = validated.data;
@@ -272,9 +278,9 @@ export async function createRole(
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
-      return { errors: { name: ['A role with this name already exists.'] } };
+      return { errors: { name: [t('roles.errors.nameTaken')] } };
     }
-    return { message: 'Database Error: Failed to Create Role.' };
+    return { message: t('roles.errors.databaseCreate') };
   }
 
   updateTag(CACHE_TAGS.roles);
@@ -288,16 +294,17 @@ export async function updateRole(
   formData: FormData,
 ): Promise<RoleState> {
   await requirePermission('roles:update');
+  const t = await getTranslations();
 
   if (await isSystemRole(id)) {
-    return { message: 'The Admin role cannot be changed.' };
+    return { message: t('roles.errors.adminLocked') };
   }
 
-  const { validated, permissions } = parseRoleForm(formData);
+  const { validated, permissions } = parseRoleForm(formData, t);
   if (!validated.success) {
     return {
       errors: validated.error.flatten().fieldErrors,
-      message: 'Missing Fields. Failed to Update Role.',
+      message: t('roles.errors.missingFieldsUpdate'),
     };
   }
   const { name, description } = validated.data;
@@ -319,9 +326,9 @@ export async function updateRole(
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
-      return { errors: { name: ['A role with this name already exists.'] } };
+      return { errors: { name: [t('roles.errors.nameTaken')] } };
     }
-    return { message: 'Database Error: Failed to Update Role.' };
+    return { message: t('roles.errors.databaseUpdate') };
   }
 
   updateTag(CACHE_TAGS.roles);

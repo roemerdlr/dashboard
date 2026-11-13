@@ -11,8 +11,10 @@ import {
 import { Button } from '@/app/ui/button';
 import { createInvoice, State } from '@/app/lib/actions';
 import { useActionState } from 'react';
+import { useTranslations } from '@/app/lib/i18n/client';
 
 export default function Form({ customers }: { customers: CustomerField[] }) {
+  const t = useTranslations();
   const initialState: State = { message: null, errors: {} };
   const [state, formAction] = useActionState(createInvoice, initialState);
   return (
@@ -21,7 +23,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
         {/* Customer Name */}
         <div className="mb-4">
           <label htmlFor="customer" className="mb-2 block text-sm font-medium">
-            Choose customer
+            {t('invoices.chooseCustomer')}
           </label>
           <div className="relative">
             <select
@@ -32,7 +34,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
               aria-describedby="customer-error"
             >
               <option value="" disabled>
-                Select a customer
+                {t('invoices.selectCustomer')}
               </option>
               {customers.map((customer) => (
                 <option key={customer.id} value={customer.id}>
@@ -55,7 +57,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
         {/* Invoice Amount */}
         <div className="mb-4">
           <label htmlFor="amount" className="mb-2 block text-sm font-medium">
-            Choose an amount
+            {t('invoices.chooseAmount')}
           </label>
           <div className="relative mt-2 rounded-md">
             <div className="relative">
@@ -64,7 +66,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
                 name="amount"
                 type="number"
                 step="0.01"
-                placeholder="Enter USD amount"
+                placeholder={t('invoices.amountPlaceholder')}
                 className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
                 aria-describedby="amount-error"
               />
@@ -84,7 +86,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
         {/* Invoice Status */}
         <fieldset aria-describedby="status-error">
           <legend className="mb-2 block text-sm font-medium">
-            Set the invoice status
+            {t('invoices.setStatus')}
           </legend>
           <div className="rounded-md border border-gray-200 bg-white px-[14px] py-3">
             <div className="flex gap-4">
@@ -100,7 +102,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
                   htmlFor="pending"
                   className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600"
                 >
-                  Pending <ClockIcon className="h-4 w-4" />
+                  {t('invoices.pending')} <ClockIcon className="h-4 w-4" />
                 </label>
               </div>
               <div className="flex items-center">
@@ -115,7 +117,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
                   htmlFor="paid"
                   className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-green-500 px-3 py-1.5 text-xs font-medium text-white"
                 >
-                  Paid <CheckIcon className="h-4 w-4" />
+                  {t('invoices.paid')} <CheckIcon className="h-4 w-4" />
                 </label>
               </div>
             </div>
@@ -142,9 +144,9 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
           href="/dashboard/invoices"
           className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
         >
-          Cancel
+          {t('common.cancel')}
         </Link>
-        <Button type="submit">Create Invoice</Button>
+        <Button type="submit">{t('invoices.create')}</Button>
       </div>
     </form>
   );

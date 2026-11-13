@@ -11,6 +11,7 @@ import { useActionState } from 'react';
 import { RoleField, UserForm as UserFormData } from '@/app/lib/definitions';
 import { Button } from '@/app/ui/button';
 import { createUser, updateUser, UserState } from '@/app/lib/admin-actions';
+import { useTranslations } from '@/app/lib/i18n/client';
 
 const inputClass =
   'peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500';
@@ -37,6 +38,7 @@ export default function UserForm({
   user?: UserFormData;
   roles: RoleField[];
 }) {
+  const t = useTranslations();
   const initialState: UserState = { message: null, errors: {} };
   const action = user ? updateUser.bind(null, user.id) : createUser;
   const [state, formAction, isPending] = useActionState(action, initialState);
@@ -47,14 +49,14 @@ export default function UserForm({
         {/* Name */}
         <div className="mb-4">
           <label htmlFor="name" className="mb-2 block text-sm font-medium">
-            Name
+            {t('common.name')}
           </label>
           <div className="relative">
             <input
               id="name"
               name="name"
               type="text"
-              placeholder="Enter full name"
+              placeholder={t('users.namePlaceholder')}
               defaultValue={user?.name}
               className={inputClass}
               aria-describedby="name-error"
@@ -67,14 +69,14 @@ export default function UserForm({
         {/* Email */}
         <div className="mb-4">
           <label htmlFor="email" className="mb-2 block text-sm font-medium">
-            Email
+            {t('common.email')}
           </label>
           <div className="relative">
             <input
               id="email"
               name="email"
               type="email"
-              placeholder="Enter email address"
+              placeholder={t('users.emailPlaceholder')}
               defaultValue={user?.email}
               className={inputClass}
               aria-describedby="email-error"
@@ -87,7 +89,7 @@ export default function UserForm({
         {/* Role */}
         <div className="mb-4">
           <label htmlFor="roleId" className="mb-2 block text-sm font-medium">
-            Role
+            {t('users.role')}
           </label>
           <div className="relative">
             <select
@@ -97,7 +99,7 @@ export default function UserForm({
               className={`${inputClass} cursor-pointer`}
               aria-describedby="roleId-error"
             >
-              <option value="">No role (overview only)</option>
+              <option value="">{t('users.noRoleOption')}</option>
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>
                   {role.name}
@@ -112,7 +114,7 @@ export default function UserForm({
         {/* Password */}
         <div className="mb-4">
           <label htmlFor="password" className="mb-2 block text-sm font-medium">
-            {user ? 'New password' : 'Password'}
+            {user ? t('users.newPassword') : t('users.password')}
           </label>
           <div className="relative">
             <input
@@ -122,8 +124,8 @@ export default function UserForm({
               autoComplete="new-password"
               placeholder={
                 user
-                  ? 'Leave empty to keep the current password'
-                  : 'At least 6 characters'
+                  ? t('users.passwordKeepPlaceholder')
+                  : t('users.passwordPlaceholder')
               }
               className={inputClass}
               aria-describedby="password-error"
@@ -144,10 +146,10 @@ export default function UserForm({
           href="/dashboard/users"
           className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
         >
-          Cancel
+          {t('common.cancel')}
         </Link>
         <Button type="submit" aria-disabled={isPending}>
-          {user ? 'Save User' : 'Create User'}
+          {user ? t('users.save') : t('users.create')}
         </Button>
       </div>
     </form>

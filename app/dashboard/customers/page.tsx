@@ -8,10 +8,12 @@ import Pagination from '@/app/ui/invoices/pagination';
 import { CustomersTableSkeleton } from '@/app/ui/skeletons';
 import { fetchCustomersPages } from '@/app/lib/data';
 import { can, requirePermission } from '@/app/lib/auth-guard';
+import { getTranslations } from '@/app/lib/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'Customers',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations();
+  return { title: t('metadata.customers') };
+}
 
 export default async function Page(props: {
   searchParams?: Promise<{
@@ -20,6 +22,7 @@ export default async function Page(props: {
   }>;
 }) {
   await requirePermission('customers:read');
+  const t = await getTranslations();
   const canCreate = await can('customers:create');
   const searchParams = await props.searchParams;
   const query = searchParams?.query || '';
@@ -28,9 +31,9 @@ export default async function Page(props: {
 
   return (
     <div className="w-full">
-      <h1 className={`${lusitana.className} text-2xl`}>Customers</h1>
+      <h1 className={`${lusitana.className} text-2xl`}>{t('customers.title')}</h1>
       <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
-        <Search placeholder="Search customers..." />
+        <Search placeholder={t('customers.search')} />
         {canCreate && <CreateCustomer />}
       </div>
       <Suspense key={query + currentPage} fallback={<CustomersTableSkeleton />}>

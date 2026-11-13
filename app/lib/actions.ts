@@ -18,25 +18,24 @@ import {
   isUploadedCustomerImage,
   validateCustomerImage,
 } from '@/app/lib/customer-image';
+import { getTranslations } from '@/app/lib/i18n/server';
+import type { Translator } from '@/app/lib/i18n/translator';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
-const FormSchema = z.object({
-    id: z.string(),
+// Built per request so validation messages use the request's language.
+const InvoiceFormSchema = (t: Translator) =>
+  z.object({
     customerId: z.string({
-        invalid_type_error: 'Please select a customer.',
+      invalid_type_error: t('invoices.errors.selectCustomer'),
     }),
     amount: z.coerce
-        .number()
-        .gt(0, { message: 'Please enter an amount greater than $0.' }),
+      .number()
+      .gt(0, { message: t('invoices.errors.amountGreaterThanZero') }),
     status: z.enum(['pending', 'paid'], {
-        invalid_type_error: 'Please select an invoice status.',
+      invalid_type_error: t('invoices.errors.selectStatus'),
     }),
-    date: z.string(),
-});
-
-const CreateInvoice = FormSchema.omit({ id: true, date: true });
-const UpdateInvoice = FormSchema.omit({ id: true, date: true });
+  });
 
 export type State = {
     errors?: {
@@ -49,8 +48,9 @@ export type State = {
 
 export async function createInvoice(prevState: State, formData: FormData) {
   await requirePermission('invoices:create');
+    const t = await getTranslations();
     // Validate form using Zod
-    const validatedFields = CreateInvoice.safeParse({
+    const validatedFields = InvoiceFormSchema(t).safeParse({
         customerId: formData.get('customerId'),
         amount: formData.get('amount'),
         status: formData.get('status'),
@@ -60,7 +60,7 @@ export async function createInvoice(prevState: State, formData: FormData) {
     if (!validatedFields.success) {
         return {
             errors: validatedFields.error.flatten().fieldErrors,
-            message: 'Missing Fields. Failed to Create Invoice.',
+            message: t('invoices.errors.missingFieldsCreate'),
         };
     }
 
@@ -78,7 +78,7 @@ export async function createInvoice(prevState: State, formData: FormData) {
     } catch (error) {
         // If a database error occurs, return a more specific error.
         return {
-            message: 'Database Error: Failed to Create Invoice.',
+            message: t('invoices.errors.databaseCreate'),
         };
     }
 
@@ -94,7 +94,8 @@ export async function updateInvoice(
   formData: FormData,
 ) {
   await requirePermission('invoices:update');
-  const validatedFields = UpdateInvoice.safeParse({
+  const t = await getTranslations();
+  const validatedFields = InvoiceFormSchema(t).safeParse({
     customerId: formData.get('customerId'),
     amount: formData.get('amount'),
     status: formData.get('status'),
@@ -103,7 +104,7 @@ export async function updateInvoice(
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: 'Missing Fields. Failed to Update Invoice.',
+      message: t('invoices.errors.missingFieldsUpdate'),
     };
   }
  
@@ -117,7 +118,7 @@ export async function updateInvoice(
       WHERE id = ${id}
     `;
   } catch (error) {
-    return { message: 'Database Error: Failed to Update Invoice.' };
+    return { message: t('invoices.errors.databaseUpdate') };
   }
  
   updateTag(CACHE_TAGS.invoices);
@@ -140,24 +141,26 @@ export async function authenticate(
     await signIn('credentials', formData);
   } catch (error) {
     if (error instanceof AuthError) {
+      const t = await getTranslations();
       switch (error.type) {
         case 'CredentialsSignin':
-          return 'Invalid credentials.';
+          return t('login.invalidCredentials');
         default:
-          return 'Something went wrong.';
+          return t('login.error');
       }
     }
     throw error;
   }
 }
 
-const CustomerFormSchema = z.object({
-  name: z.string().trim().min(1, { message: 'Please enter a name.' }),
-  email: z
-    .string()
-    .trim()
-    .email({ message: 'Please enter a valid email address.' }),
-});
+const CustomerFormSchema = (t: Translator) =>
+  z.object({
+    name: z.string().trim().min(1, { message: t('customers.errors.name') }),
+    email: z
+      .string()
+      .trim()
+      .email({ message: t('customers.errors.email') }),
+  });
 
 export type CustomerState = {
   errors?: {
@@ -217,8 +220,8 @@ async function deleteCustomerImage(imageUrl: string) {
   }
 }
 
-function validateCustomerForm(formData: FormData) {
-  const validatedFields = CustomerFormSchema.safeParse({
+function validateCustomerForm(formData: FormData, t: Translator) {
+  const validatedFields = CustomerFormSchema(t).safeParse({
     name: formData.get('name'),
     email: formData.get('email'),
   });
@@ -232,7 +235,7 @@ function validateCustomerForm(formData: FormData) {
         ...(validatedFields.success
           ? {}
           : validatedFields.error.flatten().fieldErrors),
-        ...(imageError ? { image: [imageError] } : {}),
+        ...(imageError ? { image: [t(imageError)] } : {}),
       },
     };
   }
@@ -244,11 +247,12 @@ export async function createCustomer(
   formData: FormData,
 ) {
   await requirePermission('customers:create');
-  const validated = validateCustomerForm(formData);
+  const t = await getTranslations();
+  const validated = validateCustomerForm(formData, t);
   if (!validated.success) {
     return {
       errors: validated.errors,
-      message: 'Missing Fields. Failed to Create Customer.',
+      message: t('customers.errors.missingFieldsCreate'),
     };
   }
 
@@ -260,7 +264,7 @@ export async function createCustomer(
       imageUrl = await uploadCustomerImage(validated.image);
     } catch (error) {
       console.error('Image upload failed:', error);
-      return { message: 'Upload Error: Failed to process or upload the image.' };
+      return { message: t('customers.errors.upload') };
     }
   }
 
@@ -271,7 +275,7 @@ export async function createCustomer(
     `;
   } catch (error) {
     await deleteCustomerImage(imageUrl);
-    return { message: 'Database Error: Failed to Create Customer.' };
+    return { message: t('customers.errors.databaseCreate') };
   }
 
   revalidateCustomerPages();
@@ -284,11 +288,12 @@ export async function updateCustomer(
   formData: FormData,
 ) {
   await requirePermission('customers:update');
-  const validated = validateCustomerForm(formData);
+  const t = await getTranslations();
+  const validated = validateCustomerForm(formData, t);
   if (!validated.success) {
     return {
       errors: validated.errors,
-      message: 'Missing Fields. Failed to Update Customer.',
+      message: t('customers.errors.missingFieldsUpdate'),
     };
   }
 
@@ -302,7 +307,7 @@ export async function updateCustomer(
         WHERE id = ${id}
       `;
     } catch (error) {
-      return { message: 'Database Error: Failed to Update Customer.' };
+      return { message: t('customers.errors.databaseUpdate') };
     }
   } else {
     let newImageUrl: string;
@@ -310,7 +315,7 @@ export async function updateCustomer(
       newImageUrl = await uploadCustomerImage(validated.image);
     } catch (error) {
       console.error('Image upload failed:', error);
-      return { message: 'Upload Error: Failed to process or upload the image.' };
+      return { message: t('customers.errors.upload') };
     }
 
     let oldImageUrl: string | undefined;
@@ -326,7 +331,7 @@ export async function updateCustomer(
       `;
     } catch (error) {
       await deleteCustomerImage(newImageUrl);
-      return { message: 'Database Error: Failed to Update Customer.' };
+      return { message: t('customers.errors.databaseUpdate') };
     }
 
     // Only remove the previous image once the new one is saved.

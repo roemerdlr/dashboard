@@ -4,13 +4,17 @@ import Image from 'next/image';
 import { isUploadedCustomerImage } from '@/app/lib/customer-image';
 import { lusitana } from '@/app/ui/fonts';
 import { fetchLatestInvoices } from '@/app/lib/data';
+import { getTranslations } from '@/app/lib/i18n/server';
 
 export default async function LatestInvoices() { // Remove props
-  const latestInvoices = await fetchLatestInvoices();
+  const [t, latestInvoices] = await Promise.all([
+    getTranslations(),
+    fetchLatestInvoices(),
+  ]);
   return (
     <div className="flex w-full flex-col md:col-span-4">
       <h2 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
-        Latest Invoices
+        {t('dashboard.latestInvoices')}
       </h2>
       <div className="flex grow flex-col justify-between rounded-xl bg-gray-50 p-4">
         {/* NOTE: Uncomment this code in Chapter 7 */}
@@ -31,7 +35,7 @@ export default async function LatestInvoices() { // Remove props
                   <Image
                     src={invoice.image_url}
                     unoptimized={isUploadedCustomerImage(invoice.image_url)}
-                    alt={`${invoice.name}'s profile picture`}
+                    alt={t('common.profilePicture', { name: invoice.name })}
                     className="mr-4 rounded-full"
                     width={32}
                     height={32}
@@ -56,7 +60,9 @@ export default async function LatestInvoices() { // Remove props
         </div>
         <div className="flex items-center pb-2 pt-6">
           <ArrowPathIcon className="h-5 w-5 text-gray-500" />
-          <h3 className="ml-2 text-sm text-gray-500 ">Updated just now</h3>
+          <h3 className="ml-2 text-sm text-gray-500 ">
+            {t('dashboard.updatedJustNow')}
+          </h3>
         </div>
       </div>
     </div>

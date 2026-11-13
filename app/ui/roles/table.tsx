@@ -3,9 +3,11 @@ import { fetchRoles } from '@/app/lib/data';
 import { can } from '@/app/lib/auth-guard';
 import { ALL_PERMISSIONS } from '@/app/lib/permissions';
 import { UpdateRole, DeleteRole } from '@/app/ui/roles/buttons';
+import { getTranslations } from '@/app/lib/i18n/server';
 
 export default async function RolesTable() {
-  const [roles, canUpdate, canDelete] = await Promise.all([
+  const [t, roles, canUpdate, canDelete] = await Promise.all([
+    getTranslations(),
     fetchRoles(),
     can('roles:update'),
     can('roles:delete'),
@@ -13,19 +15,21 @@ export default async function RolesTable() {
 
   const permissionsLabel = (role: (typeof roles)[number]) =>
     role.is_system
-      ? 'All permissions'
-      : `${role.permission_count} of ${ALL_PERMISSIONS.length} permissions`;
+      ? t('roles.allPermissions')
+      : t('roles.permissionCount', {
+          count: role.permission_count,
+          total: ALL_PERMISSIONS.length,
+        });
 
-  const usersLabel = (count: number) =>
-    `${count} ${count === 1 ? 'user' : 'users'}`;
+  const usersLabel = (count: number) => t('roles.userCount', { count });
 
   const actions = (role: (typeof roles)[number]) =>
     role.is_system ? (
       <span
         className="flex items-center gap-1 text-xs text-gray-500"
-        title="Built-in role: always has every permission"
+        title={t('roles.builtInHint')}
       >
-        <LockClosedIcon className="h-4 w-4" /> Built-in
+        <LockClosedIcon className="h-4 w-4" /> {t('roles.builtIn')}
       </span>
     ) : (
       <>
@@ -36,7 +40,7 @@ export default async function RolesTable() {
             name={role.name}
             disabledReason={
               role.user_count > 0
-                ? 'Reassign the users with this role before deleting it'
+                ? t('roles.deleteInUse')
                 : undefined
             }
           />
@@ -69,19 +73,19 @@ export default async function RolesTable() {
             <thead className="rounded-lg text-left text-sm font-normal">
               <tr>
                 <th scope="col" className="px-4 py-5 font-medium sm:pl-6">
-                  Role
+                  {t('roles.role')}
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Description
+                  {t('roles.description')}
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Permissions
+                  {t('roles.permissions')}
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Users
+                  {t('roles.users')}
                 </th>
                 <th scope="col" className="relative py-3 pl-6 pr-3">
-                  <span className="sr-only">Edit</span>
+                  <span className="sr-only">{t('common.edit')}</span>
                 </th>
               </tr>
             </thead>

@@ -11,9 +11,11 @@ import {
   updateCustomer,
   CustomerState,
 } from '@/app/lib/actions';
+import { useTranslations } from '@/app/lib/i18n/client';
 
 // Used for both create (no `customer`) and edit (with `customer`).
 export default function CustomerForm({ customer }: { customer?: Customer }) {
+  const t = useTranslations();
   const initialState: CustomerState = { message: null, errors: {} };
   const action = customer
     ? updateCustomer.bind(null, customer.id)
@@ -26,14 +28,14 @@ export default function CustomerForm({ customer }: { customer?: Customer }) {
         {/* Name */}
         <div className="mb-4">
           <label htmlFor="name" className="mb-2 block text-sm font-medium">
-            Name
+            {t('common.name')}
           </label>
           <div className="relative">
             <input
               id="name"
               name="name"
               type="text"
-              placeholder="Enter customer name"
+              placeholder={t('customers.namePlaceholder')}
               defaultValue={customer?.name}
               className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
               aria-describedby="name-error"
@@ -52,14 +54,14 @@ export default function CustomerForm({ customer }: { customer?: Customer }) {
         {/* Email */}
         <div className="mb-4">
           <label htmlFor="email" className="mb-2 block text-sm font-medium">
-            Email
+            {t('common.email')}
           </label>
           <div className="relative">
             <input
               id="email"
               name="email"
               type="email"
-              placeholder="Enter customer email"
+              placeholder={t('customers.emailPlaceholder')}
               defaultValue={customer?.email}
               className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
               aria-describedby="email-error"
@@ -93,10 +95,10 @@ export default function CustomerForm({ customer }: { customer?: Customer }) {
           href="/dashboard/customers"
           className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
         >
-          Cancel
+          {t('common.cancel')}
         </Link>
         <Button type="submit" aria-disabled={isPending}>
-          {customer ? 'Edit Customer' : 'Create Customer'}
+          {customer ? t('customers.edit') : t('customers.create')}
         </Button>
       </div>
     </form>

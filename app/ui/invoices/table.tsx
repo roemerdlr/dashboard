@@ -5,6 +5,8 @@ import InvoiceStatus from '@/app/ui/invoices/status';
 import { formatDateToLocal, formatCurrency } from '@/app/lib/utils';
 import { fetchFilteredInvoices } from '@/app/lib/data';
 import { can } from '@/app/lib/auth-guard';
+import { getLocale, getTranslations } from '@/app/lib/i18n/server';
+import { INTL_LOCALES } from '@/app/lib/i18n/config';
 
 export default async function InvoicesTable({
   query,
@@ -13,7 +15,9 @@ export default async function InvoicesTable({
   query: string;
   currentPage: number;
 }) {
-  const [invoices, canUpdate, canDelete] = await Promise.all([
+  const [t, locale, invoices, canUpdate, canDelete] = await Promise.all([
+    getTranslations(),
+    getLocale(),
     fetchFilteredInvoices(query, currentPage),
     can('invoices:update'),
     can('invoices:delete'),
@@ -38,7 +42,7 @@ export default async function InvoicesTable({
                         className="mr-2 rounded-full"
                         width={28}
                         height={28}
-                        alt={`${invoice.name}'s profile picture`}
+                        alt={t('common.profilePicture', { name: invoice.name })}
                       />
                       <p>{invoice.name}</p>
                     </div>
@@ -51,7 +55,7 @@ export default async function InvoicesTable({
                     <p className="text-xl font-medium">
                       {formatCurrency(invoice.amount)}
                     </p>
-                    <p>{formatDateToLocal(invoice.date)}</p>
+                    <p>{formatDateToLocal(invoice.date, INTL_LOCALES[locale])}</p>
                   </div>
                   <div className="flex justify-end gap-2">
                     {canUpdate && <UpdateInvoice id={invoice.id} />}
@@ -71,22 +75,22 @@ export default async function InvoicesTable({
             <thead className="rounded-lg text-left text-sm font-normal">
               <tr>
                 <th scope="col" className="px-4 py-5 font-medium sm:pl-6">
-                  Customer
+                  {t('invoices.customer')}
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Email
+                  {t('common.email')}
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Amount
+                  {t('invoices.amount')}
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Date
+                  {t('invoices.date')}
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Status
+                  {t('invoices.status')}
                 </th>
                 <th scope="col" className="relative py-3 pl-6 pr-3">
-                  <span className="sr-only">Edit</span>
+                  <span className="sr-only">{t('common.edit')}</span>
                 </th>
               </tr>
             </thead>
@@ -104,7 +108,7 @@ export default async function InvoicesTable({
                         className="rounded-full"
                         width={28}
                         height={28}
-                        alt={`${invoice.name}'s profile picture`}
+                        alt={t('common.profilePicture', { name: invoice.name })}
                       />
                       <p>{invoice.name}</p>
                     </div>
@@ -116,7 +120,7 @@ export default async function InvoicesTable({
                     {formatCurrency(invoice.amount)}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
-                    {formatDateToLocal(invoice.date)}
+                    {formatDateToLocal(invoice.date, INTL_LOCALES[locale])}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
                     <InvoiceStatus status={invoice.status} />

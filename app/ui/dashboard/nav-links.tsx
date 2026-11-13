@@ -10,25 +10,28 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
+import { useTranslations } from '@/app/lib/i18n/client';
+import type { MessageKey } from '@/app/lib/i18n/translator';
 
 // Map of links to display in the side navigation.
 // Depending on the size of the application, this would be stored in a database.
-const links = [
-  { name: 'Home', href: '/dashboard', icon: HomeIcon },
+const links: { name: MessageKey; href: string; icon: typeof HomeIcon }[] = [
+  { name: 'nav.home', href: '/dashboard', icon: HomeIcon },
   {
-    name: 'Invoices',
+    name: 'nav.invoices',
     href: '/dashboard/invoices',
     icon: DocumentDuplicateIcon,
   },
-  { name: 'Customers', href: '/dashboard/customers', icon: UserGroupIcon },
-  { name: 'Users', href: '/dashboard/users', icon: UsersIcon },
-  { name: 'Roles', href: '/dashboard/roles', icon: ShieldCheckIcon },
+  { name: 'nav.customers', href: '/dashboard/customers', icon: UserGroupIcon },
+  { name: 'nav.users', href: '/dashboard/users', icon: UsersIcon },
+  { name: 'nav.roles', href: '/dashboard/roles', icon: ShieldCheckIcon },
 ];
 
 // `allowedHrefs` comes from SideNav (a Server Component), which checks the
 // user's permissions. Hiding links is only cosmetic: every page also checks.
 export default function NavLinks({ allowedHrefs }: { allowedHrefs: string[] }) {
   const pathname = usePathname();
+  const t = useTranslations();
   return (
     <>
       {links
@@ -47,7 +50,7 @@ export default function NavLinks({ allowedHrefs }: { allowedHrefs: string[] }) {
               )}
             >
               <LinkIcon className="w-6" />
-              <p className="hidden md:block">{link.name}</p>
+              <p className="hidden md:block">{t(link.name)}</p>
             </Link>
           );
         })}

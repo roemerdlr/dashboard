@@ -1,11 +1,14 @@
 import AcmeLogo from '@/app/ui/acme-logo';
 import LoginForm from '@/app/ui/login-form';
 import { Suspense } from 'react';
+import LocaleSwitcher from '@/app/ui/locale-switcher';
 import { Metadata } from 'next';
+import { getTranslations } from '@/app/lib/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'Login',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations();
+  return { title: t('metadata.login') };
+}
  
 export default function LoginPage() {
   return (
@@ -19,6 +22,7 @@ export default function LoginPage() {
         <Suspense>
           <LoginForm />
         </Suspense>
+        <LocaleSwitcher className="self-end" />
       </div>
     </main>
   );

@@ -5,12 +5,15 @@ import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
 import Form from '@/app/ui/roles/form';
 import { fetchRoleById } from '@/app/lib/data';
 import { requirePermission } from '@/app/lib/auth-guard';
+import { getTranslations } from '@/app/lib/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'Edit Role',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations();
+  return { title: t('metadata.editRole') };
+}
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
+  const t = await getTranslations();
   await requirePermission('roles:update');
   const { id } = await props.params;
 
@@ -26,8 +29,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     <main>
       <Breadcrumbs
         breadcrumbs={[
-          { label: 'Roles', href: '/dashboard/roles' },
-          { label: 'Edit Role', href: `/dashboard/roles/${id}/edit`, active: true },
+          { label: t('roles.title'), href: '/dashboard/roles' },
+          { label: t('roles.edit'), href: `/dashboard/roles/${id}/edit`, active: true },
         ]}
       />
       <Form role={role} />

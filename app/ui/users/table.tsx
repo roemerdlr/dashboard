@@ -2,9 +2,11 @@ import { fetchUsers } from '@/app/lib/data';
 import { can, getCurrentUser } from '@/app/lib/auth-guard';
 import { UpdateUser, DeleteUser } from '@/app/ui/users/buttons';
 import { RoleBadge } from '@/app/ui/roles/badge';
+import { getTranslations } from '@/app/lib/i18n/server';
 
 export default async function UsersTable() {
-  const [users, currentUser, canUpdate, canDelete] = await Promise.all([
+  const [t, users, currentUser, canUpdate, canDelete] = await Promise.all([
+    getTranslations(),
     fetchUsers(),
     getCurrentUser(),
     can('users:update'),
@@ -20,7 +22,7 @@ export default async function UsersTable() {
           name={user.name}
           disabledReason={
             user.id === currentUser?.id
-              ? "You can't delete your own account"
+              ? t('users.cantDeleteSelf')
               : undefined
           }
         />
@@ -53,16 +55,16 @@ export default async function UsersTable() {
             <thead className="rounded-lg text-left text-sm font-normal">
               <tr>
                 <th scope="col" className="px-4 py-5 font-medium sm:pl-6">
-                  Name
+                  {t('common.name')}
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Email
+                  {t('common.email')}
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Role
+                  {t('users.role')}
                 </th>
                 <th scope="col" className="relative py-3 pl-6 pr-3">
-                  <span className="sr-only">Edit</span>
+                  <span className="sr-only">{t('common.edit')}</span>
                 </th>
               </tr>
             </thead>
@@ -93,10 +95,11 @@ export default async function UsersTable() {
   );
 }
 
-function YouBadge() {
+async function YouBadge() {
+  const t = await getTranslations();
   return (
     <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-      You
+      {t('users.you')}
     </span>
   );
 }

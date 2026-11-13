@@ -2,6 +2,11 @@ import { generateYAxis } from '@/app/lib/utils';
 import { CalendarIcon } from '@heroicons/react/24/outline';
 import { lusitana } from '@/app/ui/fonts';
 import { fetchRevenue } from '@/app/lib/data';
+import { getLocale, getTranslations } from '@/app/lib/i18n/server';
+import { INTL_LOCALES } from '@/app/lib/i18n/config';
+
+// The revenue table stores English month abbreviations ('Jan', 'Feb', ...).
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 // This component is representational only.
 // For data visualization UI, check out:
@@ -10,10 +15,22 @@ import { fetchRevenue } from '@/app/lib/data';
 // https://airbnb.io/visx/
 
 export default async function RevenueChart() { // Make component async, remove the props
-  const revenue = await fetchRevenue();
+  const [t, locale, revenue] = await Promise.all([
+    getTranslations(),
+    getLocale(),
+    fetchRevenue(),
+  ]);
+  const monthFormat = new Intl.DateTimeFormat(INTL_LOCALES[locale], {
+    month: 'short',
+    timeZone: 'UTC',
+  });
+  const monthLabel = (month: string) => {
+    const index = MONTHS.indexOf(month);
+    return index === -1 ? month : monthFormat.format(Date.UTC(2000, index, 1));
+  };
   const chartHeight = 350;
   if (!revenue || revenue.length === 0) {
-    return <p className="mt-4 text-gray-400">No data available.</p>;
+    return <p className="mt-4 text-gray-400">{t('dashboard.noData')}</p>;
   }
 
   const { yAxisLabels, topLabel } = generateYAxis(revenue);
@@ -21,7 +38,7 @@ export default async function RevenueChart() { // Make component async, remove t
   return (
     <div className="w-full md:col-span-4">
       <h2 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
-        Recent Revenue
+        {t('dashboard.recentRevenue')}
       </h2>
       <div className="rounded-xl bg-gray-50 p-4">
         <div className="sm:grid-cols-13 mt-0 grid grid-cols-12 items-end gap-2 rounded-md bg-white p-4 md:gap-4">
@@ -43,14 +60,16 @@ export default async function RevenueChart() { // Make component async, remove t
                 }}
               ></div>
               <p className="-rotate-90 text-sm text-gray-400 sm:rotate-0">
-                {month.month}
+                {monthLabel(month.month)}
               </p>
             </div>
           ))}
         </div>
         <div className="flex items-center pb-2 pt-6">
           <CalendarIcon className="h-5 w-5 text-gray-500" />
-          <h3 className="ml-2 text-sm text-gray-500 ">Last 12 months</h3>
+          <h3 className="ml-2 text-sm text-gray-500 ">
+            {t('dashboard.last12Months')}
+          </h3>
         </div>
       </div>
     </div>

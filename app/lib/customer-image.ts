@@ -1,3 +1,5 @@
+import type { MessageKey } from '@/app/lib/i18n/translator';
+
 // Shared by the customer image picker (client) and the customer actions (server).
 export const CUSTOMER_IMAGE_TYPES = [
   'image/png',
@@ -8,13 +10,17 @@ export const CUSTOMER_IMAGE_TYPES = [
 export const CUSTOMER_IMAGE_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 export const DEFAULT_CUSTOMER_IMAGE = '/customers/default.png';
 
-// Returns an error message, or null if the file is acceptable.
-export function validateCustomerImage(file: { type: string; size: number }) {
+// Returns the translation key of the error, or null if the file is acceptable.
+// Callers translate it (useTranslations on the client, getTranslations on the server).
+export function validateCustomerImage(file: {
+  type: string;
+  size: number;
+}): MessageKey | null {
   if (!CUSTOMER_IMAGE_TYPES.includes(file.type)) {
-    return 'Please choose a PNG, JPEG, WebP or GIF image.';
+    return 'customers.errors.imageType';
   }
   if (file.size > CUSTOMER_IMAGE_MAX_BYTES) {
-    return 'Image must be 2 MB or smaller.';
+    return 'customers.errors.imageSize';
   }
   return null;
 }
