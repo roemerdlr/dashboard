@@ -6,6 +6,11 @@ import { redirect } from 'next/navigation';
 import postgres from 'postgres';
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
+import { put, del } from '@vercel/blob';
+import {
+  DEFAULT_CUSTOMER_IMAGE,
+  validateCustomerImage,
+} from '@/app/lib/customer-image';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
@@ -145,11 +150,10 @@ export type CustomerState = {
   errors?: {
     name?: string[];
     email?: string[];
+    image?: string[];
   };
   message?: string | null;
 };
-
-const DEFAULT_CUSTOMER_IMAGE = '/customers/default.png';
 
 function revalidateCustomerPages() {
   // Customer names, emails and images also appear on the invoices and overview pages.
@@ -158,30 +162,89 @@ function revalidateCustomerPages() {
   revalidatePath('/dashboard');
 }
 
-export async function createCustomer(
-  prevState: CustomerState,
-  formData: FormData,
-) {
+// Returns the uploaded File, or null when the user didn't pick one
+// (an empty file input still submits a 0-byte File).
+function getImageFile(formData: FormData) {
+  const image = formData.get('image');
+  return image instanceof File && image.size > 0 ? image : null;
+}
+
+function isBlobUrl(url: string) {
+  return url.includes('.blob.vercel-storage.com/');
+}
+
+async function uploadCustomerImage(file: File) {
+  const blob = await put(`customers/${file.name}`, file, {
+    access: 'public',
+    addRandomSuffix: true,
+    contentType: file.type,
+  });
+  return blob.url;
+}
+
+// Best effort: a leftover blob is only wasted storage, so don't fail the request over it.
+async function deleteCustomerImage(url: string) {
+  if (!isBlobUrl(url)) return;
+  try {
+    await del(url);
+  } catch (error) {
+    console.error('Failed to delete customer image:', error);
+  }
+}
+
+function validateCustomerForm(formData: FormData) {
   const validatedFields = CustomerFormSchema.safeParse({
     name: formData.get('name'),
     email: formData.get('email'),
   });
+  const image = getImageFile(formData);
+  const imageError = image ? validateCustomerImage(image) : null;
 
-  if (!validatedFields.success) {
+  if (!validatedFields.success || imageError) {
     return {
-      errors: validatedFields.error.flatten().fieldErrors,
+      success: false as const,
+      errors: {
+        ...(validatedFields.success
+          ? {}
+          : validatedFields.error.flatten().fieldErrors),
+        ...(imageError ? { image: [imageError] } : {}),
+      },
+    };
+  }
+  return { success: true as const, data: validatedFields.data, image };
+}
+
+export async function createCustomer(
+  prevState: CustomerState,
+  formData: FormData,
+) {
+  const validated = validateCustomerForm(formData);
+  if (!validated.success) {
+    return {
+      errors: validated.errors,
       message: 'Missing Fields. Failed to Create Customer.',
     };
   }
 
-  const { name, email } = validatedFields.data;
+  const { name, email } = validated.data;
+
+  let imageUrl = DEFAULT_CUSTOMER_IMAGE;
+  if (validated.image) {
+    try {
+      imageUrl = await uploadCustomerImage(validated.image);
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      return { message: 'Upload Error: Failed to upload the image.' };
+    }
+  }
 
   try {
     await sql`
       INSERT INTO customers (name, email, image_url)
-      VALUES (${name}, ${email}, ${DEFAULT_CUSTOMER_IMAGE})
+      VALUES (${name}, ${email}, ${imageUrl})
     `;
   } catch (error) {
+    await deleteCustomerImage(imageUrl);
     return { message: 'Database Error: Failed to Create Customer.' };
   }
 
@@ -194,28 +257,53 @@ export async function updateCustomer(
   prevState: CustomerState,
   formData: FormData,
 ) {
-  const validatedFields = CustomerFormSchema.safeParse({
-    name: formData.get('name'),
-    email: formData.get('email'),
-  });
-
-  if (!validatedFields.success) {
+  const validated = validateCustomerForm(formData);
+  if (!validated.success) {
     return {
-      errors: validatedFields.error.flatten().fieldErrors,
+      errors: validated.errors,
       message: 'Missing Fields. Failed to Update Customer.',
     };
   }
 
-  const { name, email } = validatedFields.data;
+  const { name, email } = validated.data;
 
-  try {
-    await sql`
-      UPDATE customers
-      SET name = ${name}, email = ${email}
-      WHERE id = ${id}
-    `;
-  } catch (error) {
-    return { message: 'Database Error: Failed to Update Customer.' };
+  if (!validated.image) {
+    try {
+      await sql`
+        UPDATE customers
+        SET name = ${name}, email = ${email}
+        WHERE id = ${id}
+      `;
+    } catch (error) {
+      return { message: 'Database Error: Failed to Update Customer.' };
+    }
+  } else {
+    let newImageUrl: string;
+    try {
+      newImageUrl = await uploadCustomerImage(validated.image);
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      return { message: 'Upload Error: Failed to upload the image.' };
+    }
+
+    let oldImageUrl: string | undefined;
+    try {
+      const [old] = await sql<{ image_url: string }[]>`
+        SELECT image_url FROM customers WHERE id = ${id}
+      `;
+      oldImageUrl = old?.image_url;
+      await sql`
+        UPDATE customers
+        SET name = ${name}, email = ${email}, image_url = ${newImageUrl}
+        WHERE id = ${id}
+      `;
+    } catch (error) {
+      await deleteCustomerImage(newImageUrl);
+      return { message: 'Database Error: Failed to Update Customer.' };
+    }
+
+    // Only remove the previous image once the new one is saved.
+    if (oldImageUrl) await deleteCustomerImage(oldImageUrl);
   }
 
   revalidateCustomerPages();
@@ -232,6 +320,9 @@ export async function deleteCustomer(id: string) {
     throw new Error('Cannot delete a customer who still has invoices.');
   }
 
-  await sql`DELETE FROM customers WHERE id = ${id}`;
+  const deleted = await sql<{ image_url: string }[]>`
+    DELETE FROM customers WHERE id = ${id} RETURNING image_url
+  `;
+  if (deleted[0]) await deleteCustomerImage(deleted[0].image_url);
   revalidateCustomerPages();
 }

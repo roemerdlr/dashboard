@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useActionState } from 'react';
 import { Customer } from '@/app/lib/definitions';
 import { Button } from '@/app/ui/button';
+import ImageInput from '@/app/ui/customers/image-input';
 import {
   createCustomer,
   updateCustomer,
@@ -73,6 +74,12 @@ export default function CustomerForm({ customer }: { customer?: Customer }) {
             ))}
           </div>
         </div>
+
+        {/* Image */}
+        <ImageInput
+          currentImageUrl={customer?.image_url}
+          errors={state.errors?.image}
+        />
 
         {/* Form-level message */}
         <div aria-live="polite" aria-atomic="true">
