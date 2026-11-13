@@ -4,6 +4,7 @@ import { UpdateInvoice, DeleteInvoice } from '@/app/ui/invoices/buttons';
 import InvoiceStatus from '@/app/ui/invoices/status';
 import { formatDateToLocal, formatCurrency } from '@/app/lib/utils';
 import { fetchFilteredInvoices } from '@/app/lib/data';
+import { can } from '@/app/lib/auth-guard';
 
 export default async function InvoicesTable({
   query,
@@ -12,7 +13,11 @@ export default async function InvoicesTable({
   query: string;
   currentPage: number;
 }) {
-  const invoices = await fetchFilteredInvoices(query, currentPage);
+  const [invoices, canUpdate, canDelete] = await Promise.all([
+    fetchFilteredInvoices(query, currentPage),
+    can('invoices:update'),
+    can('invoices:delete'),
+  ]);
 
   return (
     <div className="mt-6 flow-root">
@@ -49,12 +54,14 @@ export default async function InvoicesTable({
                     <p>{formatDateToLocal(invoice.date)}</p>
                   </div>
                   <div className="flex justify-end gap-2">
-                    <UpdateInvoice id={invoice.id} />
-                    <DeleteInvoice
-                      id={invoice.id}
-                      customerName={invoice.name}
-                      amount={formatCurrency(invoice.amount)}
-                    />
+                    {canUpdate && <UpdateInvoice id={invoice.id} />}
+                    {canDelete && (
+                      <DeleteInvoice
+                        id={invoice.id}
+                        customerName={invoice.name}
+                        amount={formatCurrency(invoice.amount)}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -116,12 +123,14 @@ export default async function InvoicesTable({
                   </td>
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     <div className="flex justify-end gap-3">
-                      <UpdateInvoice id={invoice.id} />
-                      <DeleteInvoice
-                      id={invoice.id}
-                      customerName={invoice.name}
-                      amount={formatCurrency(invoice.amount)}
-                    />
+                      {canUpdate && <UpdateInvoice id={invoice.id} />}
+                      {canDelete && (
+                        <DeleteInvoice
+                        id={invoice.id}
+                        customerName={invoice.name}
+                        amount={formatCurrency(invoice.amount)}
+                      />
+                      )}
                     </div>
                   </td>
                 </tr>

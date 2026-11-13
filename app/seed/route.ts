@@ -1,11 +1,48 @@
 import bcrypt from 'bcrypt';
 import postgres from 'postgres';
 import { invoices, customers, revenue, users } from '../lib/placeholder-data';
+import { ADMIN_ROLE_ID, DEFAULT_ROLES } from '../lib/permissions';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
-async function seedUsers() {
+async function seedRoles() {
   await sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS roles (
+      id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+      name VARCHAR(255) NOT NULL UNIQUE,
+      description TEXT NOT NULL DEFAULT '',
+      is_system BOOLEAN NOT NULL DEFAULT FALSE
+    );
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS role_permissions (
+      role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+      permission VARCHAR(64) NOT NULL,
+      PRIMARY KEY (role_id, permission)
+    );
+  `;
+
+  for (const role of DEFAULT_ROLES) {
+    await sql`
+      INSERT INTO roles (id, name, description, is_system)
+      VALUES (${role.id}, ${role.name}, ${role.description}, ${role.isSystem})
+      ON CONFLICT (id) DO NOTHING;
+    `;
+    for (const permission of role.permissions) {
+      await sql`
+        INSERT INTO role_permissions (role_id, permission)
+        VALUES (${role.id}, ${permission})
+        ON CONFLICT DO NOTHING;
+      `;
+    }
+  }
+}
+
+async function seedUsers() {
+  // users.role_id references roles, so roles must exist first.
+  await seedRoles();
+
   await sql`
     CREATE TABLE IF NOT EXISTS users (
       id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -13,6 +50,11 @@ async function seedUsers() {
       email TEXT NOT NULL UNIQUE,
       password TEXT NOT NULL
     );
+  `;
+  // Added after the course schema; ADD COLUMN IF NOT EXISTS migrates existing databases.
+  await sql`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS role_id UUID REFERENCES roles(id);
   `;
 
   const insertedUsers = await Promise.all(
@@ -25,6 +67,12 @@ async function seedUsers() {
       `;
     }),
   );
+
+  // The seeded user is the first administrator.
+  await sql`
+    UPDATE users SET role_id = ${ADMIN_ROLE_ID}
+    WHERE id = ${users[0].id} AND role_id IS NULL;
+  `;
 
   return insertedUsers;
 }
@@ -41,6 +89,11 @@ async function seedInvoices() {
       date DATE NOT NULL
     );
   `;
+
+  // The placeholder invoices have no id, so ON CONFLICT can't detect them and
+  // re-running /seed (e.g. to apply the roles migration) would duplicate them.
+  const [{ count }] = await sql`SELECT COUNT(*) FROM invoices`;
+  if (Number(count) > 0) return [];
 
   const insertedInvoices = await Promise.all(
     invoices.map(

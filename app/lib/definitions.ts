@@ -7,6 +7,45 @@ export type User = {
   name: string;
   email: string;
   password: string;
+  role_id: string | null;
+};
+
+// Row for the users administration table (no password).
+export type UsersTableRow = {
+  id: string;
+  name: string;
+  email: string;
+  role_id: string | null;
+  role_name: string | null;
+};
+
+export type UserForm = {
+  id: string;
+  name: string;
+  email: string;
+  role_id: string | null;
+};
+
+export type RoleField = {
+  id: string;
+  name: string;
+};
+
+export type RolesTableRow = {
+  id: string;
+  name: string;
+  description: string;
+  is_system: boolean;
+  user_count: number;
+  permission_count: number;
+};
+
+export type RoleForm = {
+  id: string;
+  name: string;
+  description: string;
+  is_system: boolean;
+  permissions: string[];
 };
 
 export type Customer = {

@@ -10,10 +10,13 @@ export function ConfirmDeleteButton({
   action,
   title,
   description,
+  disabledReason,
 }: {
   action: () => Promise<void>;
   title: string;
   description: string;
+  // When set, the button is disabled and this explains why (shown on hover).
+  disabledReason?: string;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   // Every row renders its own dialog, so the title id must be unique.
@@ -29,7 +32,9 @@ export function ConfirmDeleteButton({
       <button
         type="button"
         onClick={() => dialogRef.current?.showModal()}
-        className="rounded-md border p-2 hover:bg-gray-100"
+        disabled={!!disabledReason}
+        title={disabledReason ?? 'Delete'}
+        className="rounded-md border p-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
       >
         <span className="sr-only">Delete</span>
         <TrashIcon className="w-5" />

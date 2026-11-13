@@ -4,12 +4,14 @@ import { z } from 'zod';
 import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
 import Form from '@/app/ui/customers/form';
 import { fetchCustomerById } from '@/app/lib/data';
+import { requirePermission } from '@/app/lib/auth-guard';
 
 export const metadata: Metadata = {
   title: 'Edit Customer',
 };
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
+  await requirePermission('customers:update');
   const { id } = await props.params;
 
   // A malformed id would make Postgres throw on the uuid column; treat it as not found.

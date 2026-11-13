@@ -16,6 +16,14 @@ export const authConfig = {
       }
       return true;
     },
+    // Expose the user id (stored as the JWT subject) on the session, so the
+    // server can look up the user's role and permissions.
+    session({ session, token }) {
+      if (token.sub && session.user) {
+        session.user.id = token.sub;
+      }
+      return session;
+    },
   },
   providers: [], // Add providers with an empty array for now
 } satisfies NextAuthConfig;

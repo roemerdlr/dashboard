@@ -2,6 +2,11 @@ import postgres from 'postgres';
 import {
   Customer,
   CustomerField,
+  RoleField,
+  RoleForm,
+  RolesTableRow,
+  UserForm,
+  UsersTableRow,
   CustomersTableType,
   InvoiceForm,
   InvoicesTable,
@@ -253,5 +258,92 @@ export async function fetchCustomerById(id: string) {
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch customer.');
+  }
+}
+
+// ---------- Users & roles administration ----------
+
+export async function fetchUsers() {
+  try {
+    return await sql<UsersTableRow[]>`
+      SELECT users.id, users.name, users.email, users.role_id, roles.name AS role_name
+      FROM users
+      LEFT JOIN roles ON roles.id = users.role_id
+      ORDER BY users.name ASC
+    `;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch users.');
+  }
+}
+
+export async function fetchUserById(id: string) {
+  try {
+    const data = await sql<UserForm[]>`
+      SELECT id, name, email, role_id FROM users WHERE id = ${id}
+    `;
+    return data[0];
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch user.');
+  }
+}
+
+// Roles for the user form's role picker.
+export async function fetchRoleOptions() {
+  try {
+    return await sql<RoleField[]>`
+      SELECT id, name FROM roles ORDER BY is_system DESC, name ASC
+    `;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch roles.');
+  }
+}
+
+export async function fetchRoles() {
+  try {
+    const data = await sql<RolesTableRow[]>`
+      SELECT
+        roles.id,
+        roles.name,
+        roles.description,
+        roles.is_system,
+        (SELECT COUNT(*) FROM users WHERE users.role_id = roles.id) AS user_count,
+        (SELECT COUNT(*) FROM role_permissions WHERE role_permissions.role_id = roles.id) AS permission_count
+      FROM roles
+      ORDER BY roles.is_system DESC, roles.name ASC
+    `;
+    // COUNT(*) comes back from Postgres as a bigint string.
+    return data.map((role) => ({
+      ...role,
+      user_count: Number(role.user_count),
+      permission_count: Number(role.permission_count),
+    }));
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch roles.');
+  }
+}
+
+export async function fetchRoleById(id: string) {
+  try {
+    const data = await sql<RoleForm[]>`
+      SELECT
+        roles.id,
+        roles.name,
+        roles.description,
+        roles.is_system,
+        ARRAY(
+          SELECT permission FROM role_permissions
+          WHERE role_permissions.role_id = roles.id
+        ) AS permissions
+      FROM roles
+      WHERE roles.id = ${id}
+    `;
+    return data[0];
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch role.');
   }
 }

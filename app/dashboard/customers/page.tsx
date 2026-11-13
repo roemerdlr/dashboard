@@ -7,6 +7,7 @@ import { CreateCustomer } from '@/app/ui/customers/buttons';
 import Pagination from '@/app/ui/invoices/pagination';
 import { CustomersTableSkeleton } from '@/app/ui/skeletons';
 import { fetchCustomersPages } from '@/app/lib/data';
+import { can, requirePermission } from '@/app/lib/auth-guard';
 
 export const metadata: Metadata = {
   title: 'Customers',
@@ -18,6 +19,8 @@ export default async function Page(props: {
     page?: string;
   }>;
 }) {
+  await requirePermission('customers:read');
+  const canCreate = await can('customers:create');
   const searchParams = await props.searchParams;
   const query = searchParams?.query || '';
   const currentPage = Number(searchParams?.page) || 1;
@@ -28,7 +31,7 @@ export default async function Page(props: {
       <h1 className={`${lusitana.className} text-2xl`}>Customers</h1>
       <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
         <Search placeholder="Search customers..." />
-        <CreateCustomer />
+        {canCreate && <CreateCustomer />}
       </div>
       <Suspense key={query + currentPage} fallback={<CustomersTableSkeleton />}>
         <Table query={query} currentPage={currentPage} />

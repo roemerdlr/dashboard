@@ -1,6 +1,6 @@
 import { get } from '@vercel/blob';
 import { type NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getCurrentUser } from '@/app/lib/auth-guard';
 import { CUSTOMER_IMAGE_BLOB_FOLDER } from '@/app/lib/customer-image';
 
 // Serves customer images from the private Blob store to signed-in users.
@@ -9,9 +9,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ pathname: string[] }> },
 ) {
-  // /api is excluded from proxy.ts, so authenticate here.
-  const session = await auth();
-  if (!session?.user) {
+  // /api is excluded from proxy.ts, so authenticate here. Any existing user
+  // may load avatars: they also appear on the overview's latest invoices.
+  const user = await getCurrentUser();
+  if (!user) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 

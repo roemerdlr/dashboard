@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import postgres from 'postgres';
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
+import { requirePermission } from '@/app/lib/auth-guard';
 import { put, del } from '@vercel/blob';
 import sharp from 'sharp';
 import {
@@ -46,6 +47,7 @@ export type State = {
 };
 
 export async function createInvoice(prevState: State, formData: FormData) {
+  await requirePermission('invoices:create');
     // Validate form using Zod
     const validatedFields = CreateInvoice.safeParse({
         customerId: formData.get('customerId'),
@@ -89,6 +91,7 @@ export async function updateInvoice(
   prevState: State,
   formData: FormData,
 ) {
+  await requirePermission('invoices:update');
   const validatedFields = UpdateInvoice.safeParse({
     customerId: formData.get('customerId'),
     amount: formData.get('amount'),
@@ -120,6 +123,7 @@ export async function updateInvoice(
 }
 
 export async function deleteInvoice(id: string) {
+  await requirePermission('invoices:delete');
   await sql`DELETE FROM invoices WHERE id = ${id}`;
   revalidatePath('/dashboard/invoices');
 }
@@ -234,6 +238,7 @@ export async function createCustomer(
   prevState: CustomerState,
   formData: FormData,
 ) {
+  await requirePermission('customers:create');
   const validated = validateCustomerForm(formData);
   if (!validated.success) {
     return {
@@ -273,6 +278,7 @@ export async function updateCustomer(
   prevState: CustomerState,
   formData: FormData,
 ) {
+  await requirePermission('customers:update');
   const validated = validateCustomerForm(formData);
   if (!validated.success) {
     return {
@@ -327,6 +333,7 @@ export async function updateCustomer(
 }
 
 export async function deleteCustomer(id: string) {
+  await requirePermission('customers:delete');
   // invoices.customer_id has no foreign key, so guard here to avoid orphaned invoices.
   // The UI disables the button for these customers; this covers stale pages.
   const [{ count }] = await sql`

@@ -2,12 +2,14 @@ import Form from '@/app/ui/invoices/create-form';
 import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
 import { fetchCustomers } from '@/app/lib/data';
 import { Metadata } from 'next';
+import { requirePermission } from '@/app/lib/auth-guard';
 
 export const metadata: Metadata = {
   title: 'Create Invoice',
 };
  
 export default async function Page() {
+  await requirePermission('invoices:create');
   const customers = await fetchCustomers();
  
   return (

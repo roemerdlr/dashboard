@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { isUploadedCustomerImage } from '@/app/lib/customer-image';
 import { fetchFilteredCustomers } from '@/app/lib/data';
+import { can } from '@/app/lib/auth-guard';
 import { UpdateCustomer, DeleteCustomer } from '@/app/ui/customers/buttons';
 
 export default async function CustomersTable({
@@ -10,7 +11,11 @@ export default async function CustomersTable({
   query: string;
   currentPage: number;
 }) {
-  const customers = await fetchFilteredCustomers(query, currentPage);
+  const [customers, canUpdate, canDelete] = await Promise.all([
+    fetchFilteredCustomers(query, currentPage),
+    can('customers:update'),
+    can('customers:delete'),
+  ]);
 
   return (
     <div className="w-full">
@@ -57,11 +62,13 @@ export default async function CustomersTable({
                     <div className="flex items-center justify-between pt-4 text-sm">
                       <p>{customer.total_invoices} invoices</p>
                       <div className="flex justify-end gap-2">
-                        <UpdateCustomer id={customer.id} />
-                        <DeleteCustomer
-                          id={customer.id}
-                          hasInvoices={Number(customer.total_invoices) > 0}
-                        />
+                        {canUpdate && <UpdateCustomer id={customer.id} />}
+                        {canDelete && (
+                          <DeleteCustomer
+                            id={customer.id}
+                            hasInvoices={Number(customer.total_invoices) > 0}
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -121,11 +128,13 @@ export default async function CustomersTable({
                       </td>
                       <td className="whitespace-nowrap bg-white py-3 pl-6 pr-3 group-first-of-type:rounded-md group-last-of-type:rounded-md">
                         <div className="flex justify-end gap-3">
-                          <UpdateCustomer id={customer.id} />
-                          <DeleteCustomer
-                            id={customer.id}
-                            hasInvoices={Number(customer.total_invoices) > 0}
-                          />
+                          {canUpdate && <UpdateCustomer id={customer.id} />}
+                          {canDelete && (
+                            <DeleteCustomer
+                              id={customer.id}
+                              hasInvoices={Number(customer.total_invoices) > 0}
+                            />
+                          )}
                         </div>
                       </td>
                     </tr>
