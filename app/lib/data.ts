@@ -14,10 +14,15 @@ import {
   Revenue,
 } from './definitions';
 import { formatCurrency } from './utils';
+import { cachedQuery, CACHE_TAGS } from './cache';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
-export async function fetchRevenue() {
+// Every read query below is wrapped with cachedQuery (see the exports at the
+// end of the file), so repeated page loads are served from the cache instead
+// of Postgres until a Server Action invalidates the matching tag.
+
+async function fetchRevenueQuery() {
   try {
     // Artificially delay a response for demo purposes.
     // Don't do this in production :)
@@ -36,7 +41,7 @@ export async function fetchRevenue() {
   }
 }
 
-export async function fetchLatestInvoices() {
+async function fetchLatestInvoicesQuery() {
   try {
     const data = await sql<LatestInvoiceRaw[]>`
       SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
@@ -56,7 +61,7 @@ export async function fetchLatestInvoices() {
   }
 }
 
-export async function fetchCardData() {
+async function fetchCardDataQuery() {
   try {
     // You can probably combine these into a single SQL query
     // However, we are intentionally splitting them to demonstrate
@@ -92,7 +97,7 @@ export async function fetchCardData() {
 }
 
 const ITEMS_PER_PAGE = 6;
-export async function fetchFilteredInvoices(
+async function fetchFilteredInvoicesQuery(
   query: string,
   currentPage: number,
 ) {
@@ -127,7 +132,7 @@ export async function fetchFilteredInvoices(
   }
 }
 
-export async function fetchInvoicesPages(query: string) {
+async function fetchInvoicesPagesQuery(query: string) {
   try {
     const data = await sql`SELECT COUNT(*)
     FROM invoices
@@ -148,7 +153,7 @@ export async function fetchInvoicesPages(query: string) {
   }
 }
 
-export async function fetchInvoiceById(id: string) {
+async function fetchInvoiceByIdQuery(id: string) {
   try {
     const data = await sql<InvoiceForm[]>`
       SELECT
@@ -173,7 +178,7 @@ export async function fetchInvoiceById(id: string) {
   }
 }
 
-export async function fetchCustomers() {
+async function fetchCustomersQuery() {
   try {
     const customers = await sql<CustomerField[]>`
       SELECT
@@ -190,7 +195,7 @@ export async function fetchCustomers() {
   }
 }
 
-export async function fetchFilteredCustomers(
+async function fetchFilteredCustomersQuery(
   query: string,
   currentPage: number,
 ) {
@@ -229,7 +234,7 @@ export async function fetchFilteredCustomers(
   }
 }
 
-export async function fetchCustomersPages(query: string) {
+async function fetchCustomersPagesQuery(query: string) {
   try {
     const data = await sql`SELECT COUNT(*)
     FROM customers
@@ -246,7 +251,7 @@ export async function fetchCustomersPages(query: string) {
   }
 }
 
-export async function fetchCustomerById(id: string) {
+async function fetchCustomerByIdQuery(id: string) {
   try {
     const data = await sql<Customer[]>`
       SELECT id, name, email, image_url
@@ -263,7 +268,7 @@ export async function fetchCustomerById(id: string) {
 
 // ---------- Users & roles administration ----------
 
-export async function fetchUsers() {
+async function fetchUsersQuery() {
   try {
     return await sql<UsersTableRow[]>`
       SELECT users.id, users.name, users.email, users.role_id, roles.name AS role_name
@@ -277,7 +282,7 @@ export async function fetchUsers() {
   }
 }
 
-export async function fetchUserById(id: string) {
+async function fetchUserByIdQuery(id: string) {
   try {
     const data = await sql<UserForm[]>`
       SELECT id, name, email, role_id FROM users WHERE id = ${id}
@@ -290,7 +295,7 @@ export async function fetchUserById(id: string) {
 }
 
 // Roles for the user form's role picker.
-export async function fetchRoleOptions() {
+async function fetchRoleOptionsQuery() {
   try {
     return await sql<RoleField[]>`
       SELECT id, name FROM roles ORDER BY is_system DESC, name ASC
@@ -301,7 +306,7 @@ export async function fetchRoleOptions() {
   }
 }
 
-export async function fetchRoles() {
+async function fetchRolesQuery() {
   try {
     const data = await sql<RolesTableRow[]>`
       SELECT
@@ -326,7 +331,7 @@ export async function fetchRoles() {
   }
 }
 
-export async function fetchRoleById(id: string) {
+async function fetchRoleByIdQuery(id: string) {
   try {
     const data = await sql<RoleForm[]>`
       SELECT
@@ -347,3 +352,81 @@ export async function fetchRoleById(id: string) {
     throw new Error('Failed to fetch role.');
   }
 }
+
+// ---------- Cached exports ----------
+
+export const fetchRevenue = cachedQuery(
+  fetchRevenueQuery,
+  'fetchRevenue',
+  [CACHE_TAGS.revenue],
+);
+export const fetchLatestInvoices = cachedQuery(
+  fetchLatestInvoicesQuery,
+  'fetchLatestInvoices',
+  [CACHE_TAGS.invoices, CACHE_TAGS.customers],
+);
+export const fetchCardData = cachedQuery(
+  fetchCardDataQuery,
+  'fetchCardData',
+  [CACHE_TAGS.invoices, CACHE_TAGS.customers],
+);
+export const fetchFilteredInvoices = cachedQuery(
+  fetchFilteredInvoicesQuery,
+  'fetchFilteredInvoices',
+  [CACHE_TAGS.invoices, CACHE_TAGS.customers],
+);
+export const fetchInvoicesPages = cachedQuery(
+  fetchInvoicesPagesQuery,
+  'fetchInvoicesPages',
+  [CACHE_TAGS.invoices, CACHE_TAGS.customers],
+);
+export const fetchInvoiceById = cachedQuery(
+  fetchInvoiceByIdQuery,
+  'fetchInvoiceById',
+  [CACHE_TAGS.invoices],
+);
+export const fetchCustomers = cachedQuery(
+  fetchCustomersQuery,
+  'fetchCustomers',
+  [CACHE_TAGS.customers],
+);
+export const fetchFilteredCustomers = cachedQuery(
+  fetchFilteredCustomersQuery,
+  'fetchFilteredCustomers',
+  [CACHE_TAGS.customers, CACHE_TAGS.invoices],
+);
+export const fetchCustomersPages = cachedQuery(
+  fetchCustomersPagesQuery,
+  'fetchCustomersPages',
+  [CACHE_TAGS.customers],
+);
+export const fetchCustomerById = cachedQuery(
+  fetchCustomerByIdQuery,
+  'fetchCustomerById',
+  [CACHE_TAGS.customers],
+);
+export const fetchUsers = cachedQuery(
+  fetchUsersQuery,
+  'fetchUsers',
+  [CACHE_TAGS.users, CACHE_TAGS.roles],
+);
+export const fetchUserById = cachedQuery(
+  fetchUserByIdQuery,
+  'fetchUserById',
+  [CACHE_TAGS.users],
+);
+export const fetchRoleOptions = cachedQuery(
+  fetchRoleOptionsQuery,
+  'fetchRoleOptions',
+  [CACHE_TAGS.roles],
+);
+export const fetchRoles = cachedQuery(
+  fetchRolesQuery,
+  'fetchRoles',
+  [CACHE_TAGS.roles, CACHE_TAGS.users],
+);
+export const fetchRoleById = cachedQuery(
+  fetchRoleByIdQuery,
+  'fetchRoleById',
+  [CACHE_TAGS.roles],
+);

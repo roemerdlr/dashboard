@@ -3,7 +3,8 @@
 import bcrypt from 'bcrypt';
 import postgres from 'postgres';
 import { z } from 'zod';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
+import { CACHE_TAGS } from '@/app/lib/cache';
 import { redirect } from 'next/navigation';
 import { requirePermission } from '@/app/lib/auth-guard';
 import { isPermission } from '@/app/lib/permissions';
@@ -105,6 +106,7 @@ export async function createUser(
     return { message: 'Database Error: Failed to Create User.' };
   }
 
+  updateTag(CACHE_TAGS.users);
   revalidatePath('/dashboard/users');
   revalidatePath('/dashboard/roles');
   redirect('/dashboard/users');
@@ -177,6 +179,7 @@ export async function updateUser(
     return { message: 'Database Error: Failed to Update User.' };
   }
 
+  updateTag(CACHE_TAGS.users);
   revalidatePath('/dashboard/users');
   revalidatePath('/dashboard/roles');
   redirect('/dashboard/users');
@@ -201,6 +204,7 @@ export async function deleteUser(id: string) {
   }
 
   await sql`DELETE FROM users WHERE id = ${id}`;
+  updateTag(CACHE_TAGS.users);
   revalidatePath('/dashboard/users');
   revalidatePath('/dashboard/roles');
 }
@@ -273,6 +277,7 @@ export async function createRole(
     return { message: 'Database Error: Failed to Create Role.' };
   }
 
+  updateTag(CACHE_TAGS.roles);
   revalidatePath('/dashboard/roles');
   redirect('/dashboard/roles');
 }
@@ -319,6 +324,7 @@ export async function updateRole(
     return { message: 'Database Error: Failed to Update Role.' };
   }
 
+  updateTag(CACHE_TAGS.roles);
   revalidatePath('/dashboard/roles');
   revalidatePath('/dashboard/users');
   redirect('/dashboard/roles');
@@ -340,5 +346,6 @@ export async function deleteRole(id: string) {
 
   // role_permissions rows are removed by ON DELETE CASCADE.
   await sql`DELETE FROM roles WHERE id = ${id}`;
+  updateTag(CACHE_TAGS.roles);
   revalidatePath('/dashboard/roles');
 }

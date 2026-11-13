@@ -2,6 +2,8 @@ import bcrypt from 'bcrypt';
 import postgres from 'postgres';
 import { invoices, customers, revenue, users } from '../lib/placeholder-data';
 import { ADMIN_ROLE_ID, DEFAULT_ROLES } from '../lib/permissions';
+import { revalidateTag } from 'next/cache';
+import { CACHE_TAGS } from '../lib/cache';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
@@ -162,6 +164,13 @@ export async function GET() {
       seedInvoices(),
       seedRevenue(),
     ]);
+
+    // Seeding writes the tables directly, so drop every cached query result.
+    // updateTag is only available in Server Actions; expire: 0 is the
+    // Route Handler equivalent (no stale data served afterwards).
+    for (const tag of Object.values(CACHE_TAGS)) {
+      revalidateTag(tag, { expire: 0 });
+    }
 
     return Response.json({ message: 'Database seeded successfully' });
   } catch (error) {

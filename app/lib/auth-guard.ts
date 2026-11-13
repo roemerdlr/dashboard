@@ -3,6 +3,7 @@ import { forbidden, redirect } from 'next/navigation';
 import postgres from 'postgres';
 import { auth } from '@/auth';
 import { isPermission, type Permission } from '@/app/lib/permissions';
+import { cachedQuery, CACHE_TAGS } from '@/app/lib/cache';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
@@ -17,51 +18,61 @@ export type CurrentUser = {
   permissions: Permission[];
 };
 
-// The signed-in user with their role and permissions, read from the database
-// on each request (not from the session cookie), so role changes apply
-// immediately. `cache` dedupes the lookup within one request.
+// Loads a user with their role and permissions. Cached across requests per
+// user id; the users/roles tags are invalidated whenever a user or role
+// changes, so role changes still apply on the next request.
+const loadUserWithPermissions = cachedQuery(
+  async (userId: string): Promise<CurrentUser | null> => {
+    const [user] = await sql<
+      {
+        id: string;
+        name: string;
+        email: string;
+        role_id: string | null;
+        role_name: string | null;
+        is_system: boolean | null;
+        permissions: string[] | null;
+      }[]
+    >`
+      SELECT
+        users.id,
+        users.name,
+        users.email,
+        users.role_id,
+        roles.name AS role_name,
+        roles.is_system,
+        ARRAY(
+          SELECT permission FROM role_permissions
+          WHERE role_permissions.role_id = users.role_id
+        ) AS permissions
+      FROM users
+      LEFT JOIN roles ON roles.id = users.role_id
+      WHERE users.id = ${userId}
+    `;
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      roleId: user.role_id,
+      roleName: user.role_name,
+      isSystemRole: user.is_system ?? false,
+      permissions: (user.permissions ?? []).filter(isPermission),
+    };
+  },
+  'loadUserWithPermissions',
+  [CACHE_TAGS.users, CACHE_TAGS.roles],
+);
+
+// The signed-in user with their role and permissions. The session cookie only
+// provides the id; role and permissions come from the (cached) database
+// lookup above. `cache` dedupes the call within one request.
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) return null;
-
-  const [user] = await sql<
-    {
-      id: string;
-      name: string;
-      email: string;
-      role_id: string | null;
-      role_name: string | null;
-      is_system: boolean | null;
-      permissions: string[] | null;
-    }[]
-  >`
-    SELECT
-      users.id,
-      users.name,
-      users.email,
-      users.role_id,
-      roles.name AS role_name,
-      roles.is_system,
-      ARRAY(
-        SELECT permission FROM role_permissions
-        WHERE role_permissions.role_id = users.role_id
-      ) AS permissions
-    FROM users
-    LEFT JOIN roles ON roles.id = users.role_id
-    WHERE users.id = ${userId}
-  `;
-  if (!user) return null;
-
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    roleId: user.role_id,
-    roleName: user.role_name,
-    isSystemRole: user.is_system ?? false,
-    permissions: (user.permissions ?? []).filter(isPermission),
-  };
+  return loadUserWithPermissions(userId);
 });
 
 export function hasPermission(

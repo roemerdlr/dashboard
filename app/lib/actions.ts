@@ -1,7 +1,8 @@
 'use server';
 
 import { z } from 'zod';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
+import { CACHE_TAGS } from '@/app/lib/cache';
 import { redirect } from 'next/navigation';
 import postgres from 'postgres';
 import { signIn } from '@/auth';
@@ -82,6 +83,7 @@ export async function createInvoice(prevState: State, formData: FormData) {
     }
 
     // Revalidate the cache for the invoices page and redirect the user.
+    updateTag(CACHE_TAGS.invoices);
     revalidatePath('/dashboard/invoices');
     redirect('/dashboard/invoices');
 }
@@ -118,6 +120,7 @@ export async function updateInvoice(
     return { message: 'Database Error: Failed to Update Invoice.' };
   }
  
+  updateTag(CACHE_TAGS.invoices);
   revalidatePath('/dashboard/invoices');
   redirect('/dashboard/invoices');
 }
@@ -125,6 +128,7 @@ export async function updateInvoice(
 export async function deleteInvoice(id: string) {
   await requirePermission('invoices:delete');
   await sql`DELETE FROM invoices WHERE id = ${id}`;
+  updateTag(CACHE_TAGS.invoices);
   revalidatePath('/dashboard/invoices');
 }
 
@@ -166,6 +170,7 @@ export type CustomerState = {
 
 function revalidateCustomerPages() {
   // Customer names, emails and images also appear on the invoices and overview pages.
+  updateTag(CACHE_TAGS.customers);
   revalidatePath('/dashboard/customers');
   revalidatePath('/dashboard/invoices');
   revalidatePath('/dashboard');
