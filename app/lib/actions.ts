@@ -8,7 +8,12 @@ import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
 import { put, del } from '@vercel/blob';
 import {
+  CUSTOMER_IMAGE_BLOB_FOLDER,
+  CUSTOMER_IMAGE_EXTENSIONS,
+  CUSTOMER_IMAGE_ROUTE,
   DEFAULT_CUSTOMER_IMAGE,
+  blobPathnameFromImageUrl,
+  isUploadedCustomerImage,
   validateCustomerImage,
 } from '@/app/lib/customer-image';
 
@@ -169,24 +174,28 @@ function getImageFile(formData: FormData) {
   return image instanceof File && image.size > 0 ? image : null;
 }
 
-function isBlobUrl(url: string) {
-  return url.includes('.blob.vercel-storage.com/');
-}
-
+// Uploads to the private Blob store and returns the app URL that serves it.
 async function uploadCustomerImage(file: File) {
-  const blob = await put(`customers/${file.name}`, file, {
-    access: 'public',
-    addRandomSuffix: true,
-    contentType: file.type,
-  });
-  return blob.url;
+  // Use a fixed, URL-safe name; the random suffix makes it unique.
+  const extension = CUSTOMER_IMAGE_EXTENSIONS[file.type];
+  const blob = await put(
+    `${CUSTOMER_IMAGE_BLOB_FOLDER}avatar.${extension}`,
+    file,
+    {
+      access: 'private',
+      addRandomSuffix: true,
+      contentType: file.type,
+    },
+  );
+  return `${CUSTOMER_IMAGE_ROUTE}${blob.pathname}`;
 }
 
 // Best effort: a leftover blob is only wasted storage, so don't fail the request over it.
-async function deleteCustomerImage(url: string) {
-  if (!isBlobUrl(url)) return;
+// Seeded static images (/customers/*.png) are skipped.
+async function deleteCustomerImage(imageUrl: string) {
+  if (!isUploadedCustomerImage(imageUrl)) return;
   try {
-    await del(url);
+    await del(blobPathnameFromImageUrl(imageUrl));
   } catch (error) {
     console.error('Failed to delete customer image:', error);
   }

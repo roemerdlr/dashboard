@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { isUploadedCustomerImage } from '@/app/lib/customer-image';
 import { fetchFilteredCustomers } from '@/app/lib/data';
 import { UpdateCustomer, DeleteCustomer } from '@/app/ui/customers/buttons';
 
@@ -29,6 +30,7 @@ export default async function CustomersTable({
                           <div className="flex items-center gap-3">
                             <Image
                               src={customer.image_url}
+                              unoptimized={isUploadedCustomerImage(customer.image_url)}
                               className="rounded-full"
                               alt={`${customer.name}'s profile picture`}
                               width={28}
@@ -96,6 +98,7 @@ export default async function CustomersTable({
                         <div className="flex items-center gap-3">
                           <Image
                             src={customer.image_url}
+                            unoptimized={isUploadedCustomerImage(customer.image_url)}
                             className="rounded-full"
                             alt={`${customer.name}'s profile picture`}
                             width={28}

@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { isUploadedCustomerImage } from '@/app/lib/customer-image';
 import { UpdateInvoice, DeleteInvoice } from '@/app/ui/invoices/buttons';
 import InvoiceStatus from '@/app/ui/invoices/status';
 import { formatDateToLocal, formatCurrency } from '@/app/lib/utils';
@@ -28,6 +29,7 @@ export default async function InvoicesTable({
                     <div className="mb-2 flex items-center">
                       <Image
                         src={invoice.image_url}
+                        unoptimized={isUploadedCustomerImage(invoice.image_url)}
                         className="mr-2 rounded-full"
                         width={28}
                         height={28}
@@ -91,6 +93,7 @@ export default async function InvoicesTable({
                     <div className="flex items-center gap-3">
                       <Image
                         src={invoice.image_url}
+                        unoptimized={isUploadedCustomerImage(invoice.image_url)}
                         className="rounded-full"
                         width={28}
                         height={28}
